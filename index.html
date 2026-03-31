@@ -138,17 +138,62 @@
   @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 
   /* Stat cards */
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
-  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; backdrop-filter: blur(12px); transition: transform .2s; }
+/* --- DYNAMIC FLEX GRID --- */
+.stat-grid {
+  display: flex;
+  flex-wrap: wrap; /* Allows cards to move to the next line if they get too wide */
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+/* --- ENLARGING CARDS --- */
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  backdrop-filter: blur(12px);
+  
+  /* The Secret Sauce: */
+  flex: 1 1 auto;      /* Grow to fit content, shrink if needed, basis is auto */
+  min-width: 200px;    /* Minimum width before it jumps to a new line */
+  width: max-content;  /* Forces the box to expand to the width of the number */
+  
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- CLEAN VALUE TEXT --- */
+.stat-card .s-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 26px;      /* Fixed size so it doesn't shrink anymore */
+  font-weight: 500;
+  margin: 8px 0;
+  white-space: nowrap; /* Forces the box to grow horizontally to match the text */
+  display: block;
+}
+
+/* Ensures the vault also expands */
+#vault-balance {
+  font-size: 32px;
+  width: max-content;
+}
+
   .stat-card:hover { transform: translateY(-2px); }
   .stat-card .s-icon { font-size: 26px; margin-bottom: 10px; }
   .stat-card .s-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
-  .stat-card .s-val { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; }
+
   .s-val.gold { color: var(--gold); }
   .s-val.accent { color: var(--accent); }
   .s-val.blue { color: var(--blue); }
   .s-val.red { color: var(--danger); }
-  .stat-card .s-sub { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+.stat-card .s-sub { 
+  font-size: 12px; 
+  color: var(--text-muted); 
+  margin-top: auto; /* Pushes sub-text to the bottom */
+  white-space: normal; 
+  line-height: 1.4;
+}
 
   .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(12px); overflow: hidden; margin-bottom: 24px; }
   .card-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
@@ -184,104 +229,153 @@
   /* User detail modal */
  /* Enhanced Modal Styling */
 .modal-overlay {
-  backdrop-filter: blur(8px);
+  position: fixed;
+  inset: 0; /* Shorthand for top:0, left:0, right:0, bottom:0 */
   background: rgba(4, 9, 20, 0.85);
+  backdrop-filter: blur(12px);
+  display: none; /* Controlled by JS */
+  align-items: center;     /* Vertical center */
+  justify-content: center;   /* Horizontal center */
+  padding: 20px;
+  z-index: 2000; 
 }
 
+
+/* --- HOLLYWOOD-STYLE MODAL --- */
 .modal {
-  background: #0e1e34;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 28px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
+  background: linear-gradient(165deg, #0e1e34 0%, #060d18 100%);
+  border: 1px solid rgba(240, 192, 64, 0.2);
+  border-radius: 32px;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.8);
+  
+  /* Dimensions */
+  width: 100%;
+  max-width: 650px; 
+  max-height: 90vh;
+  
+  /* Internal spacing */
   position: relative;
+  overflow-y: auto;
+  outline: none;
+  
+  /* Animation */
+  animation: modalEntrance 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.15);
+}
+
+@keyframes modalEntrance {
+  from { 
+    opacity: 0; 
+    transform: scale(0.9) translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  }
+}
+
+/* Custom Scrollbar for the wider modal */
+.modal::-webkit-scrollbar {
+  width: 6px;
+}
+.modal::-webkit-scrollbar-thumb {
+  background: var(--navy-light);
+  border-radius: 10px;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .modal-header {
   background: rgba(255, 255, 255, 0.03);
   padding: 24px 30px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .modal-header h3 {
   font-family: 'Playfair Display', serif;
-  font-size: 20px;
   color: var(--gold);
-}
-
-.modal-body {
-  padding: 30px;
-}
-
-/* Info Rows & Labels */
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.info-row:last-of-type { border-bottom: none; }
-
-.ir-label {
-  color: var(--text-muted);
-  font-size: 12px;
-  text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.ir-val {
-  color: var(--text);
-  font-weight: 500;
-  font-size: 15px;
-}
-
-/* Financial Highlight Section */
+/* --- FINANCIAL HERO SECTION --- */
 .financial-focus {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(30, 107, 255, 0.05);
+  border: 1px solid rgba(30, 107, 255, 0.1);
   border-radius: 20px;
-  padding: 20px;
-  margin: 20px 0;
-  border: 1px solid var(--border);
-}
-
-.balance-display {
+  padding: 25px;
+  margin: 15px 0 25px 0;
   text-align: center;
-  margin-bottom: 15px;
+  position: relative;
 }
 
 .balance-amount {
   font-family: 'DM Mono', monospace;
-  font-size: 32px;
+  font-size: 38px;
+  font-weight: 600;
   color: var(--accent);
   display: block;
+  margin: 10px 0;
+  text-shadow: 0 0 20px rgba(0, 212, 168, 0.3);
 }
 
-/* Action Buttons in Modal */
+/* --- INTERACTIVE ACTION BUTTONS --- */
 .action-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+  margin-top: 15px;
 }
 
 .btn-action {
-  padding: 10px;
+  padding: 12px;
   border-radius: 12px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
   border: 1px solid transparent;
-  transition: all 0.2s;
+  cursor: pointer;
 }
 
-.btn-deposit { background: var(--accent-dim); color: var(--accent); border-color: rgba(0, 212, 168, 0.2); }
-.btn-deposit:hover { background: var(--accent); color: #000; }
+.btn-deposit { 
+  background: var(--accent-dim); 
+  color: var(--accent); 
+  border-color: rgba(0, 212, 168, 0.2); 
+}
+.btn-deposit:hover { 
+  background: var(--accent); 
+  color: #000; 
+  transform: translateY(-2px);
+}
 
-.btn-deduct { background: var(--danger-dim); color: var(--danger); border-color: rgba(255, 77, 109, 0.2); }
-.btn-deduct:hover { background: var(--danger); color: #fff; }
+.btn-deduct { 
+  background: var(--danger-dim); 
+  color: var(--danger); 
+  border-color: rgba(255, 77, 109, 0.2); 
+}
+.btn-deduct:hover { 
+  background: var(--danger); 
+  color: #fff; 
+  transform: translateY(-2px);
+}
+
+/* --- USER DATA ROWS --- */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.ir-label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; }
+.ir-val { font-weight: 500; color: var(--text); }
+: var(--danger); color: #fff; }
 
 /* Mini Stats Grid */
 .mini-stats {
@@ -803,60 +897,86 @@ window.viewUser = async (uid) => {
   if (!u) return;
 
   const modalBody = document.getElementById('modal-body');
-  modalBody.innerHTML = '<div class="empty-state"><span class="spinner"></span> Loading User Data...</div>';
-  document.getElementById('user-modal').style.display = 'flex';
+  const modalContainer = document.getElementById('user-modal');
+  
+  // Show modal and set loading state
+  modalContainer.style.display = 'flex';
+  modalBody.innerHTML = '<div class="empty-state"><span class="spinner"></span> Accessing Secure Records...</div>';
 
   try {
-    // 1. Calculations
-    const loanSnap = await getDocs(query(collection(db, "requests"), where("userId", "==", uid), where("status", "==", "approved")));
-    let loanHTML = loanSnap.empty ? `<span style="color:var(--accent)">No active debt</span>` : "";
-    loanSnap.forEach(docSnap => {
-      const d = docSnap.data();
-      loanHTML += `<div style="color:var(--danger); font-weight:600;">Owes: ${fmt(d.amountToRepay || d.amount)}</div>`;
-    });
-
+    // 1. Calculate Financial Stats
     const userTx = allTx.filter(tx => tx.userId === uid);
-    const totalDep = userTx.filter(tx => tx.type === 'deposit').reduce((s, t) => s + t.amount, 0);
-    const totalWth = userTx.filter(tx => tx.type === 'withdraw').reduce((s, t) => s + t.amount, 0);
-    const totalSent = userTx.filter(tx => (tx.type === 'transfer' || tx.type === 'withdraw') && tx.direction === 'out').reduce((s, t) => s + t.amount, 0);
+    const totalVolume = userTx.reduce((s, t) => s + t.amount, 0);
+    
+    // 2. Check for Loan/Debt Obligations
+    const loanSnap = await getDocs(query(
+      collection(db, "requests"), 
+      where("userId", "==", uid), 
+      where("status", "==", "approved")
+    ));
+    
+    let debtHTML = '<span style="color:var(--accent)">No Active Debt</span>';
+    if (!loanSnap.empty) {
+      let totalDebt = 0;
+      loanSnap.forEach(d => totalDebt += (d.data().amountToRepay || d.data().amount));
+      debtHTML = `<span style="color:var(--danger); font-weight:600;">Owes ${fmt(totalDebt)}</span>`;
+    }
 
-    // 2. Setting the HTML
+    // 3. Inject the "Cool" Interface
     modalBody.innerHTML = `
-      <div class="info-row"><span class="ir-label">Full Name</span><span class="ir-val">${u.name}</span></div>
-      <div class="info-row"><span class="ir-label">Account #</span><span class="ir-val" style="font-family:'DM Mono'">${u.accountNumber}</span></div>
-      
+      <div style="text-align: center; margin-bottom: 25px;">
+        <div style="width: 80px; height: 80px; background: var(--gold-dim); border: 2px solid var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-size: 28px; font-weight: 600; color: var(--gold); box-shadow: 0 0 20px rgba(240, 192, 64, 0.2);">
+          ${u.name.charAt(0)}
+        </div>
+        <h2 style="margin:0; font-family: 'Playfair Display', serif; font-size: 24px;">${u.name}</h2>
+        <p style="color:var(--text-muted); font-size: 13px; margin-top: 4px;">${u.email}</p>
+      </div>
+
       <div class="financial-focus">
-        <div class="balance-display">
-          <span class="ir-label">Current Liquidity</span>
-          <span class="balance-amount">${fmt(u.balance || 0)}</span>
-        </div>
+        <span class="ir-label" style="color: var(--blue); font-weight: 600;">Net Liquidity</span>
+        <span class="balance-amount">${fmt(u.balance || 0)}</span>
+        
         <div class="action-grid">
-          <button class="btn-action btn-deposit" onclick="adjustUserBalance('${u.uid}', ${u.balance || 0}, 'add')">+ Deposit</button>
-          <button class="btn-action btn-deduct" onclick="adjustUserBalance('${u.uid}', ${u.balance || 0}, 'deduct')">- Deduct</button>
+          <button class="btn-action btn-deposit" onclick="adjustUserBalance('${u.uid}', ${u.balance || 0}, 'add')">
+            <span>+</span> Deposit
+          </button>
+          <button class="btn-action btn-deduct" onclick="adjustUserBalance('${u.uid}', ${u.balance || 0}, 'deduct')">
+            <span>-</span> Deduct
+          </button>
         </div>
       </div>
 
-      <div class="info-row"><span class="ir-label">Debt Obligations</span><span class="ir-val">${loanHTML}</span></div>
-
-      <div class="mini-stats">
-        <div class="mini-stat-card"><span class="label">Deposits</span><span class="val" style="color:var(--accent)">${fmt(totalDep)}</span></div>
-        <div class="mini-stat-card"><span class="label">Withdraws</span><span class="val" style="color:var(--danger)">${fmt(totalWth)}</span></div>
-        <div class="mini-stat-card"><span class="label">Transfers</span><span class="val" style="color:var(--blue)">${fmt(totalSent)}</span></div>
+      <div style="background: rgba(255,255,255,0.02); border-radius: 16px; padding: 10px 20px; border: 1px solid var(--border);">
+        <div class="info-row">
+          <span class="ir-label">Account Number</span>
+          <span class="ir-val" style="font-family: 'DM Mono'">${u.accountNumber}</span>
+        </div>
+        <div class="info-row">
+          <span class="ir-label">Liability Status</span>
+          <span class="ir-val">${debtHTML}</span>
+        </div>
+        <div class="info-row">
+          <span class="ir-label">Total Activity</span>
+          <span class="ir-val" style="color: var(--blue)">${fmt(totalVolume)}</span>
+        </div>
+        <div class="info-row" style="border-bottom: none;">
+          <span class="ir-label">Account Status</span>
+          <span class="ir-val">
+            <span class="status-dot ${u.status}"></span>
+            <span style="text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">${u.status}</span>
+          </span>
+        </div>
       </div>
 
-      <div style="margin-top: 25px; text-align: center;">
-         <span class="status-dot ${u.status}"></span>
-         <span style="text-transform: capitalize; font-size: 14px; color: var(--text-muted)">Status: ${u.status}</span>
+      <div style="margin-top: 20px; text-align: center; font-size: 11px; color: var(--text-muted);">
+        Identity Verified &bull; Active since ${fmtDate(u.createdAt)}
       </div>
-    `; 
-    // ^ The backtick MUST end here before the closing brace
+    `;
   } catch (err) {
-    console.error("Modal Error:", err);
-    modalBody.innerHTML = `<div class="msg error show">Error rendering user details.</div>`;
+    console.error(err);
+    modalBody.innerHTML = '<div class="msg error show">Failed to fetch detailed audit.</div>';
   }
 };
-
-
 
   
 window.closeModal = (e) => {
