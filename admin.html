@@ -1,0 +1,1235 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusBank — Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+  :root {
+    --navy: #08111f;
+    --navy-mid: #0e1e34;
+    --navy-light: #162840;
+    --blue: #1e6bff;
+    --blue-glow: rgba(30,107,255,0.18);
+    --accent: #00d4a8;
+    --accent-dim: rgba(0,212,168,0.12);
+    --danger: #ff4d6d;
+    --danger-dim: rgba(255,77,109,0.12);
+    --gold: #f0c040;
+    --gold-dim: rgba(240,192,64,0.12);
+    --text: #e8edf5;
+    --text-muted: #6a87aa;
+    --border: rgba(255,255,255,0.07);
+    --card: rgba(14,30,52,0.9);
+    --glass: rgba(255,255,255,0.03);
+    --sidebar-w: 260px;
+    --radius: 16px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--navy); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.5;
+  }
+
+  /* AUTH */
+  #auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px; position: relative; z-index: 1;
+  }
+  .auth-box {
+    width: 100%; max-width: 400px;
+    background: var(--card); border: 1px solid rgba(240,192,64,0.2);
+    border-radius: 24px; padding: 44px 40px;
+    backdrop-filter: blur(20px); box-shadow: var(--shadow);
+    position: relative; z-index: 2;
+  }
+  .auth-box::before {
+    content: ''; position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+    width: 60%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    border-radius: 2px;
+  }
+  .auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .logo-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #a07800, var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: #000;
+    box-shadow: 0 4px 16px rgba(240,192,64,0.3);
+  }
+  .auth-logo-text { font-family: 'Playfair Display', serif; font-size: 22px; }
+  .auth-logo-text span { font-size: 11px; display: block; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-family: 'DM Sans', sans-serif; font-weight: 500; margin-top: -2px; }
+  .auth-box h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; margin-top: 24px; }
+  .auth-box p.sub { color: var(--text-muted); font-size: 13px; margin-bottom: 28px; }
+
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 7px; }
+  .form-group input {
+    width: 100%; padding: 12px 16px;
+    background: var(--navy); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-family: inherit; font-size: 14px;
+    outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  .form-group input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(240,192,64,0.12); }
+  .form-group input::placeholder { color: var(--text-muted); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: 10px; border: none; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; }
+  .btn-gold { background: linear-gradient(135deg, #b08800, var(--gold)); color: #000; width: 100%; box-shadow: 0 4px 16px rgba(240,192,64,0.25); }
+  .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(240,192,64,0.35); }
+  .btn-ghost { background: var(--glass); border: 1px solid var(--border); color: var(--text); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); }
+  .btn-primary { background: linear-gradient(135deg, var(--blue), #0044cc); color: #fff; box-shadow: 0 4px 12px rgba(30,107,255,0.3); }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
+
+  .msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 14px; display: none; }
+  .msg.show { display: block; }
+  .msg.error { background: var(--danger-dim); border: 1px solid rgba(255,77,109,0.3); color: var(--danger); }
+  .msg.success { background: var(--accent-dim); border: 1px solid rgba(0,212,168,0.3); color: var(--accent); }
+
+  /* APP */
+  #app { display: none; min-height: 100vh; position: relative; z-index: 1; }
+  #app.visible { display: flex; }
+
+  .sidebar {
+    width: var(--sidebar-w); min-height: 100vh; position: fixed; left: 0; top: 0;
+    background: var(--navy-mid); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; z-index: 100; transition: transform .3s;
+  }
+  .sidebar-header { padding: 26px 22px 18px; border-bottom: 1px solid var(--border); }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo .li { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #a07800, var(--gold)); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #000; font-size: 14px; }
+  .logo-name { font-family: 'Playfair Display', serif; font-size: 18px; }
+  .logo-badge { font-size: 10px; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; margin-top: -2px; }
+
+  .admin-card {
+    margin: 14px; padding: 14px 16px;
+    background: var(--gold-dim); border: 1px solid rgba(240,192,64,0.2); border-radius: 12px;
+  }
+  .admin-card .ac-name { font-weight: 600; font-size: 14px; }
+  .admin-card .ac-role { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: .7px; margin-top: 2px; }
+
+  nav { flex: 1; padding: 8px 12px; }
+  .nav-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; padding: 0 8px; margin-bottom: 6px; margin-top: 10px; }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; cursor: pointer; color: var(--text-muted); font-size: 14px; font-weight: 500; transition: all .15s; margin-bottom: 2px; }
+  .nav-item .icon { width: 18px; text-align: center; font-size: 16px; }
+  .nav-item:hover { background: var(--glass); color: var(--text); }
+  .nav-item.active { background: var(--gold-dim); color: var(--gold); }
+
+  .sidebar-footer { padding: 14px; border-top: 1px solid var(--border); }
+  .user-link { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px; background: var(--blue-glow); border: 1px solid rgba(30,107,255,0.2); border-radius: 9px; color: var(--blue); font-size: 13px; font-weight: 500; cursor: pointer; margin-bottom: 10px; text-decoration: none; transition: background .2s; }
+  .user-link:hover { background: rgba(30,107,255,0.18); }
+
+  .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+  .topbar { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; border-bottom: 1px solid var(--border); background: rgba(8,17,31,0.7); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }
+  .topbar h1 { font-size: 18px; font-weight: 600; }
+  .admin-badge { background: var(--gold-dim); border: 1px solid rgba(240,192,64,0.3); padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--gold); letter-spacing: .5px; }
+
+  .page { padding: 32px; display: none; animation: fadeUp .3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* Stat cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; backdrop-filter: blur(12px); transition: transform .2s; }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-card .s-icon { font-size: 26px; margin-bottom: 10px; }
+  .stat-card .s-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+  .stat-card .s-val { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 500; }
+  .s-val.gold { color: var(--gold); }
+  .s-val.accent { color: var(--accent); }
+  .s-val.blue { color: var(--blue); }
+  .s-val.red { color: var(--danger); }
+  .stat-card .s-sub { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(12px); overflow: hidden; margin-bottom: 24px; }
+  .card-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-header h3 { font-size: 15px; font-weight: 600; }
+  .card-body { padding: 20px 24px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 13px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--glass); }
+
+  .type-badge { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+  .type-badge.deposit { background: var(--accent-dim); color: var(--accent); }
+  .type-badge.withdraw { background: var(--danger-dim); color: var(--danger); }
+  .type-badge.transfer { background: var(--blue-glow); color: var(--blue); }
+
+  .role-badge { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+  .role-badge.admin { background: var(--gold-dim); color: var(--gold); }
+  .role-badge.user { background: var(--glass); color: var(--text-muted); border: 1px solid var(--border); }
+
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .status-dot.active { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+  .status-dot.inactive { background: var(--danger); }
+
+  /* Filter row */
+  .filter-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-row input, .filter-row select { padding: 9px 14px; background: var(--navy); border: 1px solid var(--border); border-radius: 9px; color: var(--text); font-family: inherit; font-size: 13px; outline: none; transition: border-color .2s; }
+  .filter-row input:focus, .filter-row select:focus { border-color: var(--gold); }
+  .filter-row input { flex: 1; min-width: 140px; }
+
+  /* User detail modal */
+ /* Enhanced Modal Styling */
+.modal-overlay {
+  backdrop-filter: blur(8px);
+  background: rgba(4, 9, 20, 0.85);
+}
+
+.modal {
+  background: #0e1e34;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
+}
+
+.modal-header {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 24px 30px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  color: var(--gold);
+}
+
+.modal-body {
+  padding: 30px;
+}
+
+/* Info Rows & Labels */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-row:last-of-type { border-bottom: none; }
+
+.ir-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ir-val {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* Financial Highlight Section */
+.financial-focus {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 1px solid var(--border);
+}
+
+.balance-display {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.balance-amount {
+  font-family: 'DM Mono', monospace;
+  font-size: 32px;
+  color: var(--accent);
+  display: block;
+}
+
+/* Action Buttons in Modal */
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.btn-action {
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.btn-deposit { background: var(--accent-dim); color: var(--accent); border-color: rgba(0, 212, 168, 0.2); }
+.btn-deposit:hover { background: var(--accent); color: #000; }
+
+.btn-deduct { background: var(--danger-dim); color: var(--danger); border-color: rgba(255, 77, 109, 0.2); }
+.btn-deduct:hover { background: var(--danger); color: #fff; }
+
+/* Mini Stats Grid */
+.mini-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.mini-stat-card {
+  background: var(--glass);
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.mini-stat-card .label { font-size: 10px; color: var(--text-muted); margin-bottom: 4px; display: block; }
+.mini-stat-card .val { font-family: 'DM Mono', monospace; font-size: 13px; }
+
+  /* Toast */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--navy-mid); border: 1px solid var(--border); border-radius: 12px; padding: 14px 20px; font-size: 14px; font-weight: 500; z-index: 999; transform: translateY(80px); opacity: 0; transition: all .3s cubic-bezier(.34,1.56,.64,1); max-width: 320px; }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-color: rgba(0,212,168,0.4); color: var(--accent); }
+  #toast.error { border-color: rgba(255,77,109,0.4); color: var(--danger); }
+
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 14px; }
+
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+  .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; }
+  .overlay-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; }
+  .overlay-bg.show { display: block; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 4px; }
+
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .hamburger { display: flex; }
+    .page { padding: 20px; }
+    .topbar { padding: 0 18px; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) { .stat-grid { grid-template-columns: 1fr; } }
+
+  /* Access Denied */
+  #access-denied { display: none; min-height: 100vh; align-items: center; justify-content: center; flex-direction: column; gap: 16px; text-align: center; padding: 32px; position: relative; z-index: 1; }
+  #access-denied h2 { font-size: 24px; color: var(--danger); }
+  #access-denied p { color: var(--text-muted); max-width: 320px; }
+  .request-card {
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 4px solid var(--gold); /* Gold highlight for loans */
+}
+
+.req-info h4 { margin: 0; font-size: 16px; color: var(--text); }
+.req-info p { margin: 5px 0 0 0; font-size: 12px; color: var(--text-muted); }
+.req-amount { font-family: 'DM Mono', monospace; font-size: 18px; color: var(--accent); font-weight: 600; }
+
+.badge-pending {
+  background: rgba(240, 192, 64, 0.1);
+  color: var(--gold);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+}
+
+.btn-ghost:hover {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+}
+
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="logo-icon">⊞</div>
+      <div class="auth-logo-text">
+        NexusBank
+        <span>Admin Portal</span>
+      </div>
+    </div>
+    <h2>Administrator Sign In</h2>
+    <p class="sub">Restricted access — admin credentials required.</p>
+    <div class="form-group"><label>Email Address</label><input type="email" id="login-email" placeholder="admin@nexusbank.com"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleLogin()"></div>
+    <button class="btn btn-gold" onclick="handleLogin()" id="login-btn">Sign In to Admin Panel</button>
+    <div class="msg" id="login-msg"></div>
+    <div style="text-align:center;margin-top:20px">
+      <a href="user.html" style="font-size:13px;color:var(--text-muted);text-decoration:none">← Back to user portal</a>
+    </div>
+  </div>
+</div>
+
+<!-- ACCESS DENIED -->
+<div id="access-denied">
+  <div style="font-size:48px">🚫</div>
+  <h2>Access Denied</h2>
+  <p>Your account does not have administrator privileges.</p>
+  <a href="user.html" class="btn btn-ghost">← Go to User Portal</a>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="overlay-bg" id="overlay-bg" onclick="closeSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="li">⊞</div>
+        <div>
+          <div class="logo-name">NexusBank</div>
+          <div class="logo-badge">Admin Portal</div>
+        </div>
+      </div>
+    </div>
+    <div class="admin-card">
+      <div class="ac-name" id="sb-name">—</div>
+      <div class="ac-role">Administrator</div>
+    </div>
+    <nav>
+      <div class="nav-label">Admin</div>
+      <div class="nav-item active" data-page="overview" onclick="navigate('overview')"><span class="icon">⬡</span> Overview</div>
+      <div class="nav-item" data-page="users" onclick="navigate('users')"><span class="icon">◉</span> All Users</div>
+      <div class="nav-item" data-page="transactions" onclick="navigate('transactions')"><span class="icon">≡</span> All Transactions</div>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="user.html" class="user-link">← User Portal</a>
+      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="handleLogout()">⤴ Sign Out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></div>
+        <h1 id="page-title">Overview</h1>
+      </div>
+      <div class="admin-badge">⊞ ADMIN</div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="s-icon">◉</div>
+          <div class="s-label">Total Users</div>
+          <div class="s-val blue" id="ov-users">—</div>
+          <div class="s-sub" id="ov-active-users">— active</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-icon">⬡</div>
+          <div class="s-label">System Balance</div>
+          <div class="s-val gold" id="ov-balance">—</div>
+          <div class="s-sub">Total across all accounts</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-icon">≡</div>
+          <div class="s-label">Total Transactions</div>
+          <div class="s-val accent" id="ov-txcount">—</div>
+          <div class="s-sub" id="ov-tx-vol">Volume: —</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-icon">⬇</div>
+          <div class="s-label">Total Deposits</div>
+          <div class="s-val accent" id="ov-deposits">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-icon">⬆</div>
+          <div class="s-label">Total Withdrawals</div>
+          <div class="s-val red" id="ov-withdrawals">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-icon">↔</div>
+          <div class="s-label">Total Transferred</div>
+          <div class="s-val blue" id="ov-transfers">—</div>
+        </div>
+      <div class="stat-card" style="border: 1px solid var(--gold); background: rgba(240,192,64,0.05);">
+  <div class="s-icon">🏦</div>
+  <div class="s-label">Bank Main Vault</div>
+  <div class="s-val" id="vault-balance" style="color:var(--gold); font-size: 32px;">$0.00</div>
+  <button class="btn btn-sm" onclick="depositToVault()" style="margin-top:10px; width:100%; background:var(--gold); color:black;">
+    + Add Capital
+  </button>
+</div>
+
+
+      </div>
+      <div class="card" style="margin-top:30px;">
+  <div class="card-header"><h3>Pending Loan Requests</h3></div>
+  <div class="card-body">
+    <table class="tx-table">
+      <thead>
+        <tr><th>User</th><th>Amount</th><th>Reason</th><th>Action</th></tr>
+      </thead>
+      <tbody id="request-tbody">
+        </tbody>
+    </table>
+  </div>
+</div>
+
+
+      <div class="card">
+        <div class="card-header"><h3>Recent Activity — Last 10 Transactions</h3></div>
+        <div class="card-header">
+  <h3>All Transactions</h3>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <span id="tx-count-label" style="font-size:13px;color:var(--text-muted)"></span>
+    <button class="btn btn-sm btn-ghost" onclick="generatePDFReport()" style="border-color:var(--gold); color:var(--gold);">
+      ± Download PDF Report
+    </button>
+  </div>
+</div>
+
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Date</th><th>User</th><th>Type</th><th>Amount</th><th>Description</th></tr></thead>
+            <tbody id="ov-recent-tbody"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="card">
+        <div class="card-header">
+          <h3>All Users</h3>
+          <span id="users-count" style="font-size:13px;color:var(--text-muted)"></span>
+        </div>
+        <div class="card-body" style="padding-bottom:0">
+          <div class="filter-row">
+            <input type="text" id="user-search" placeholder="Search name or email…" oninput="filterUsers()">
+            <select id="user-role-filter" onchange="filterUsers()">
+              <option value="">All Roles</option>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+            <select id="user-status-filter" onchange="filterUsers()">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Account #</th><th>Balance</th><th>Type</th><th>Status</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody id="users-tbody"><tr><td colspan="9" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="page" id="page-transactions">
+      <div class="card">
+        <div class="card-header">
+          <h3>All Transactions</h3>
+          <span id="tx-count-label" style="font-size:13px;color:var(--text-muted)"></span>
+        </div>
+        <div class="card-body" style="padding-bottom:0">
+          <div class="filter-row">
+            <input type="text" id="tx-search" placeholder="Search description or email…" oninput="filterTx()">
+            <select id="tx-type-filter" onchange="filterTx()">
+              <option value="">All Types</option>
+              <option value="deposit">Deposit</option>
+              <option value="withdraw">Withdraw</option>
+              <option value="transfer">Transfer</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Date</th><th>User Email</th><th>Type</th><th>Amount</th><th>Description</th><th>Counterpart</th></tr></thead>
+            <tbody id="tx-tbody"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- USER DETAIL MODAL -->
+<div class="modal-overlay" id="user-modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>User Details</h3>
+      <button class="modal-close" onclick="document.getElementById('user-modal').style.display='none'">×</button>
+    </div>
+    <div class="modal-body" id="modal-body">—</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { 
+  getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where, 
+  orderBy, addDoc, updateDoc, serverTimestamp, runTransaction, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBI8C8Q3n20eA53qDkP2Xnru_NrTztzJuE",
+  authDomain: "light-4356b.firebaseapp.com",
+  projectId: "light-4356b",
+  storageBucket: "light-4356b.firebasestorage.app",
+  messagingSenderId: "32385003741",
+  appId: "1:32385003741:web:69318d08b683119f31eb34",
+  measurementId: "G-H1526DWZH5"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentAdmin = null;
+let currentUser = null;
+let currentUserData = null; 
+let allUsers = [];
+let allTx = [];
+
+const fmt = n => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtDate = ts => {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✓ ' : '✕ ') + msg;
+  t.className = 'show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = '', 3500);
+}
+function showMsg(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = 'msg ' + type + ' show';
+  setTimeout(() => el.className = 'msg', 5000);
+}
+function setLoading(id, loading, label) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spinner"></span>' : label;
+}
+
+// ── Auth ──
+window.handleLogin = async () => {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  if (!email || !pw) return showMsg('login-msg', 'Enter your credentials.', 'error');
+  setLoading('login-btn', true, 'Sign In to Admin Panel');
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+  } catch (e) {
+    showMsg('login-msg', friendlyError(e.code), 'error');
+    setLoading('login-btn', false, 'Sign In to Admin Panel');
+  }
+};
+
+window.handleLogout = async () => { await signOut(auth); };
+
+let userListener = null; // Global variable to store the listener
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const adminSnap = await getDoc(doc(db, 'users', user.uid));
+    const adminData = adminSnap.data();
+
+    if (adminData && adminData.role === 'admin') {
+      currentUser = user;
+      document.getElementById('sb-name').textContent = adminData.name;
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('access-denied').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('app').classList.add('visible');
+      loadAll(); // Load the dashboard data
+    } else {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('access-denied').style.display = 'flex';
+    }
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('access-denied').style.display = 'none';
+  }
+});
+
+
+
+async function loadAll() {
+  await Promise.all([
+    loadUsers(), 
+    loadTransactions(), 
+    loadRequests() // <--- Add this line!
+  ]);
+  buildOverview();
+}
+
+
+async function loadUsers() {
+  const snap = await getDocs(collection(db, 'users'));
+  allUsers = snap.docs.map(d => d.data());
+  renderUsersTable(allUsers);
+  document.getElementById('users-count').textContent = `${allUsers.length} users`;
+}
+
+async function loadTransactions() {
+  const snap = await getDocs(query(collection(db, 'transactions'), orderBy('timestamp', 'desc')));
+  allTx = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderTxTable(allTx);
+  document.getElementById('tx-count-label').textContent = `${allTx.length} records`;
+}
+
+function buildOverview() {
+  const active = allUsers.filter(u => u.status === 'active').length;
+  const sysBalance = allUsers.reduce((s, u) => s + (u.balance || 0), 0);
+  let deps = 0, wths = 0, transfers = 0, txVol = 0;
+  allTx.forEach(tx => {
+    txVol += tx.amount;
+    if (tx.type === 'deposit') deps += tx.amount;
+    else if (tx.type === 'withdraw') wths += tx.amount;
+    else if (tx.type === 'transfer' && !tx.senderId) transfers += tx.amount;
+  });
+  document.getElementById('ov-users').textContent = allUsers.length;
+  document.getElementById('ov-active-users').textContent = `${active} active · ${allUsers.length - active} inactive`;
+  document.getElementById('ov-balance').textContent = fmt(sysBalance);
+  document.getElementById('ov-txcount').textContent = allTx.length;
+  document.getElementById('ov-tx-vol').textContent = 'Volume: ' + fmt(txVol);
+  document.getElementById('ov-deposits').textContent = fmt(deps);
+  document.getElementById('ov-withdrawals').textContent = fmt(wths);
+  document.getElementById('ov-transfers').textContent = fmt(transfers);
+
+  const emailMap = {};
+  allUsers.forEach(u => { emailMap[u.uid] = u.email; });
+  const recent = allTx.slice(0, 10);
+  document.getElementById('ov-recent-tbody').innerHTML = recent.length
+    ? recent.map(tx => `<tr>
+        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted)">${fmtDate(tx.timestamp)}</td>
+        <td style="font-size:12px">${emailMap[tx.userId] || tx.userId}</td>
+        <td><span class="type-badge ${tx.type}">${tx.type}</span></td>
+        <td style="font-family:'DM Mono',monospace">${fmt(tx.amount)}</td>
+        <td>${tx.description || '—'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="empty-state">No transactions</td></tr>';
+}
+
+// ── Users Table ──
+function renderUsersTable(users) {
+  const tbody = document.getElementById('users-tbody');
+  if (!users.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No users found</td></tr>'; return; }
+  tbody.innerHTML = users.map(u => `<tr>
+    <td style="font-weight:500">${u.name}</td>
+    <td style="font-size:12px;color:var(--text-muted)">${u.email}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:12px">${u.accountNumber}</td>
+    <td style="font-family:'DM Mono',monospace">${fmt(u.balance || 0)}</td>
+    <td>${u.accountType}</td>
+    <td><span class="status-dot ${u.status}"></span>${u.status}</td>
+    <td><span class="role-badge ${u.role}">${u.role}</span></td>
+    <td style="font-size:12px;color:var(--text-muted)">${fmtDate(u.createdAt)}</td>
+    <td>
+      <button class="btn btn-ghost btn-sm" onclick="viewUser('${u.uid}')">View</button>
+      ${u.role !== 'admin' ? `
+        <button class="btn btn-sm" style="background:var(--gold-dim);border:1px solid rgba(240,192,64,0.3);color:var(--gold);margin-left:4px" onclick="toggleRole('${u.uid}','${u.role}')">
+          ${u.role === 'user' ? '↑ Admin' : '↓ User'}
+        </button>
+        <button class="btn btn-sm" style="background:${u.status === 'active' ? 'var(--danger-dim)' : 'var(--accent-dim)'};border:1px solid ${u.status === 'active' ? 'rgba(255,77,109,0.3)' : 'rgba(0,212,168,0.3)'};color:${u.status === 'active' ? 'var(--danger)' : 'var(--accent)'};margin-left:4px" onclick="toggleStatus('${u.uid}','${u.status}')">
+          ${u.status === 'active' ? 'Deactivate' : 'Activate'}
+        </button>
+      ` : ''}
+    </td>
+  </tr>`).join('');
+}
+
+window.filterUsers = () => {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  const role = document.getElementById('user-role-filter').value;
+  const status = document.getElementById('user-status-filter').value;
+  renderUsersTable(allUsers.filter(u =>
+    (!q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)) &&
+    (!role || u.role === role) &&
+    (!status || u.status === status)
+  ));
+};
+window.viewUser = async (uid) => {
+  const u = allUsers.find(x => x.uid === uid);
+  if (!u) return;
+
+  const modalBody = document.getElementById('modal-body');
+  modalBody.innerHTML = '<div class="empty-state"><span class="spinner"></span> Loading User Data...</div>';
+  document.getElementById('user-modal').style.display = 'flex';
+
+  try {
+    // 1. Calculations
+    const loanSnap = await getDocs(query(collection(db, "requests"), where("userId", "==", uid), where("status", "==", "approved")));
+    let loanHTML = loanSnap.empty ? `<span style="color:var(--accent)">No active debt</span>` : "";
+    loanSnap.forEach(docSnap => {
+      const d = docSnap.data();
+      loanHTML += `<div style="color:var(--danger); font-weight:600;">Owes: ${fmt(d.amountToRepay || d.amount)}</div>`;
+    });
+
+    const userTx = allTx.filter(tx => tx.userId === uid);
+    const totalDep = userTx.filter(tx => tx.type === 'deposit').reduce((s, t) => s + t.amount, 0);
+    const totalWth = userTx.filter(tx => tx.type === 'withdraw').reduce((s, t) => s + t.amount, 0);
+    const totalSent = userTx.filter(tx => (tx.type === 'transfer' || tx.type === 'withdraw') && tx.direction === 'out').reduce((s, t) => s + t.amount, 0);
+
+    // 2. Setting the HTML
+    modalBody.innerHTML = `
+      <div class="info-row"><span class="ir-label">Full Name</span><span class="ir-val">${u.name}</span></div>
+      <div class="info-row"><span class="ir-label">Account #</span><span class="ir-val" style="font-family:'DM Mono'">${u.accountNumber}</span></div>
+      
+      <div class="financial-focus">
+        <div class="balance-display">
+          <span class="ir-label">Current Liquidity</span>
+          <span class="balance-amount">${fmt(u.balance || 0)}</span>
+        </div>
+        <div class="action-grid">
+          <button class="btn-action btn-deposit" onclick="adjustUserBalance('${u.uid}', ${u.balance || 0}, 'add')">+ Deposit</button>
+          <button class="btn-action btn-deduct" onclick="adjustUserBalance('${u.uid}', ${u.balance || 0}, 'deduct')">- Deduct</button>
+        </div>
+      </div>
+
+      <div class="info-row"><span class="ir-label">Debt Obligations</span><span class="ir-val">${loanHTML}</span></div>
+
+      <div class="mini-stats">
+        <div class="mini-stat-card"><span class="label">Deposits</span><span class="val" style="color:var(--accent)">${fmt(totalDep)}</span></div>
+        <div class="mini-stat-card"><span class="label">Withdraws</span><span class="val" style="color:var(--danger)">${fmt(totalWth)}</span></div>
+        <div class="mini-stat-card"><span class="label">Transfers</span><span class="val" style="color:var(--blue)">${fmt(totalSent)}</span></div>
+      </div>
+
+      <div style="margin-top: 25px; text-align: center;">
+         <span class="status-dot ${u.status}"></span>
+         <span style="text-transform: capitalize; font-size: 14px; color: var(--text-muted)">Status: ${u.status}</span>
+      </div>
+    `; 
+    // ^ The backtick MUST end here before the closing brace
+  } catch (err) {
+    console.error("Modal Error:", err);
+    modalBody.innerHTML = `<div class="msg error show">Error rendering user details.</div>`;
+  }
+};
+
+
+
+  
+window.closeModal = (e) => {
+  if (e.target.id === 'user-modal') document.getElementById('user-modal').style.display = 'none';
+};
+
+window.toggleRole = async (uid, currentRole) => {
+  const newRole = currentRole === 'user' ? 'admin' : 'user';
+  if (!confirm(`Change this user's role to "${newRole}"?`)) return;
+  try {
+    await updateDoc(doc(db, 'users', uid), { role: newRole });
+    const u = allUsers.find(x => x.uid === uid);
+    if (u) u.role = newRole;
+    renderUsersTable(allUsers);
+    showToast(`Role updated to ${newRole}`);
+  } catch (e) { showToast('Failed to update role', 'error'); }
+};
+
+window.toggleStatus = async (uid, currentStatus) => {
+  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  if (!confirm(`${newStatus === 'inactive' ? 'Deactivate' : 'Activate'} this account?`)) return;
+  try {
+    await updateDoc(doc(db, 'users', uid), { status: newStatus });
+    const u = allUsers.find(x => x.uid === uid);
+    if (u) u.status = newStatus;
+    renderUsersTable(allUsers);
+    showToast(`Account ${newStatus}`);
+  } catch (e) { showToast('Failed to update status', 'error'); }
+};
+
+// ── Transactions ──
+function renderTxTable(txs) {
+  const emailMap = {};
+  allUsers.forEach(u => { emailMap[u.uid] = u.email; });
+  const tbody = document.getElementById('tx-tbody');
+  if (!txs.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No transactions found</td></tr>'; return; }
+  tbody.innerHTML = txs.map(tx => {
+    const cp = tx.senderId ? tx.senderEmail : tx.recipientEmail || '—';
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted)">${fmtDate(tx.timestamp)}</td>
+      <td style="font-size:12px">${emailMap[tx.userId] || tx.userId}</td>
+      <td><span class="type-badge ${tx.type}">${tx.type}</span></td>
+      <td style="font-family:'DM Mono',monospace">${fmt(tx.amount)}</td>
+      <td>${tx.description || '—'}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${cp}</td>
+    </tr>`;
+  }).join('');
+}
+
+window.filterTx = () => {
+  const q = document.getElementById('tx-search').value.toLowerCase();
+  const type = document.getElementById('tx-type-filter').value;
+  const emailMap = {};
+  allUsers.forEach(u => { emailMap[u.uid] = u.email; });
+  renderTxTable(allTx.filter(tx =>
+    (!q || tx.description?.toLowerCase().includes(q) || emailMap[tx.userId]?.toLowerCase().includes(q) || tx.senderEmail?.toLowerCase().includes(q) || tx.recipientEmail?.toLowerCase().includes(q)) &&
+    (!type || tx.type === type)
+  ));
+};
+
+// ── Nav ──
+window.navigate = (page) => {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  const titles = { overview: 'Overview', users: 'All Users', transactions: 'All Transactions' };
+  document.getElementById('page-title').textContent = titles[page] || page;
+  closeSidebar();
+};
+
+window.toggleSidebar = () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay-bg').classList.toggle('show');
+};
+window.closeSidebar = () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay-bg').classList.remove('show');
+};
+
+function friendlyError(code) {
+  const map = {
+    'auth/invalid-credential': 'Invalid email or password.',
+    'auth/user-not-found': 'No account found.',
+    'auth/wrong-password': 'Incorrect password.',
+    'auth/too-many-requests': 'Too many attempts. Try again later.'
+  };
+  return map[code] || 'Authentication failed.';
+}
+window.adminDeposit = async (uid, currentBalance) => {
+  const amount = parseFloat(prompt("Enter deposit amount:"));
+  if (isNaN(amount) || amount <= 0) return alert("Invalid amount");
+
+  try {
+    const userRef = doc(db, 'users', uid);
+    const newBalance = currentBalance + amount;
+
+    // 1. Update the User's Balance
+    await updateDoc(userRef, { balance: newBalance });
+
+    // 2. Log the Transaction so the user sees it
+    await addDoc(collection(db, "transactions"), {
+      userId: uid,
+      type: "deposit",
+      amount: amount,
+      description: "Admin Deposit / Bank Credit",
+      timestamp: serverTimestamp()
+    });
+
+    showToast(`Deposited ${fmt(amount)} successfully`);
+    loadAll(); // Refresh the dashboard stats
+    document.getElementById('user-modal').style.display = 'none';
+  } catch (e) {
+    showToast("Error performing deposit", "error");
+  }
+};
+
+window.adjustUserBalance = async (uid, currentBalance, mode) => {
+  const action = mode === 'add' ? 'Deposit' : 'Deduct';
+  const amountInput = prompt(`Enter amount to ${action}:`);
+  const amount = parseFloat(amountInput);
+
+  if (isNaN(amount) || amount <= 0) return alert("Please enter a valid positive number.");
+  
+  // If deducting, ensure they don't go below zero (optional, but recommended for banks)
+  if (mode === 'deduct' && currentBalance - amount < 0) {
+    if (!confirm("This will result in a negative balance. Proceed?")) return;
+  }
+
+  const description = prompt(`Enter reason for ${action}:`, mode === 'add' ? "Admin Credit" : "Admin Debit/Correction");
+  if (!description) return alert("Description is required for the audit log.");
+
+  try {
+    const userRef = doc(db, 'users', uid);
+    const adjustment = mode === 'add' ? amount : -amount;
+    const newBalance = currentBalance + adjustment;
+
+    // 1. Update User Document
+    await updateDoc(userRef, { 
+      balance: newBalance 
+    });
+
+    // 2. Create Transaction Record
+  
+await addDoc(collection(db, "transactions"), {
+  userId: uid,
+  type: mode === 'add' ? "deposit" : "withdraw",
+  amount: amount,
+  description: description,
+  fromName: "NexusBank Admin", // This shows up in the user's history
+  direction: "in", // Treat admin deposit as incoming money
+  timestamp: serverTimestamp()
+});
+
+
+    showToast(`${action} of ${fmt(amount)} completed.`);
+    loadAll(); // Refresh tables and stats
+    document.getElementById('user-modal').style.display = 'none';
+  } catch (e) {
+    console.error(e);
+    showToast(`Failed to ${action} money.`, 'error');
+  }
+};
+
+async function loadRequests() {
+  try {
+    // Corrected: Both 'where' filters must be inside the query() function
+    const q = query(
+      collection(db, "requests"), 
+      where("status", "==", "pending")
+    );
+    
+    const snap = await getDocs(q);
+    const tbody = document.getElementById('request-tbody');
+    
+    if (snap.empty) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No pending loans</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = snap.docs.map(docSnap => {
+      const r = docSnap.data();
+      return `
+        <tr>
+          <td>${r.userName || 'Unknown'}<br><small>${r.accountNumber || ''}</small></td>
+          <td style="color:var(--accent); font-weight:bold;">${fmt(r.amount)}</td>
+          <td>${r.description || 'No reason provided'}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="approveLoan('${docSnap.id}', '${r.userId}', ${r.amount})">Approve</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error("Error loading requests:", error);
+  }
+}
+
+// 2. Approve Loan (The "True" Deposit)
+window.approveLoan = async (reqId, uid, amount) => {
+  if (!confirm(`Confirm approval for ${fmt(amount)}?`)) return;
+
+  const userRef = doc(db, "users", uid);
+  const vaultRef = doc(db, "system", "vault");
+  const requestRef = doc(db, "requests", reqId);
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      // --- STEP 1: DO ALL READS FIRST ---
+      const vaultSnap = await transaction.get(vaultRef);
+      const userSnap = await transaction.get(userRef);
+      const reqSnap = await transaction.get(requestRef);
+
+      // Validation checks
+      if (!vaultSnap.exists()) throw "Vault document is missing! Please 'Add Capital' first.";
+      if (!userSnap.exists()) throw "User account no longer exists.";
+      
+      const vaultData = vaultSnap.data();
+      const userData = userSnap.data();
+      const currentVaultBalance = vaultData.balance || 0;
+      const currentUserBalance = userData.balance || 0;
+
+      if (currentVaultBalance < amount) {
+        throw `Insufficient Bank Funds. Vault: ${fmt(currentVaultBalance)}`;
+      }
+
+      // --- STEP 2: DO ALL WRITES LAST ---
+      const interest = amount * 0.10; 
+      
+      // Update Vault
+      transaction.update(vaultRef, { 
+        balance: currentVaultBalance - amount 
+      });
+      
+      // Update User
+      transaction.update(userRef, { 
+        balance: currentUserBalance + amount 
+      });
+      
+      // Update Request Status
+      transaction.update(requestRef, { 
+        status: "approved",
+        amountToRepay: amount + interest 
+      });
+    });
+
+    // Step 3: Log the transaction outside the atomic block
+    await addDoc(collection(db, "transactions"), {
+      userId: uid,
+      type: "deposit", 
+      amount: amount,
+      description: "Loan Approved (Bank Vault)",
+      direction: "in",
+      timestamp: serverTimestamp()
+    });
+
+    showToast("Loan approved successfully!");
+    loadAll(); 
+  } catch (e) {
+    console.error("Transaction failed: ", e);
+    alert(e.message || e);
+  }
+};
+
+
+window.depositToVault = async () => {
+  const amount = parseFloat(prompt("Enter amount to deposit into Bank Vault:"));
+  if (isNaN(amount) || amount <= 0) return;
+
+  const vaultRef = doc(db, "system", "vault");
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const snap = await transaction.get(vaultRef);
+      const current = snap.exists() ? snap.data().balance : 0;
+      
+      transaction.set(vaultRef, { 
+        balance: current + amount,
+        lastUpdate: serverTimestamp() 
+      }, { merge: true });
+    });
+    
+    showToast(`Vault increased by ${fmt(amount)}`);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+// Add a real-time listener for the vault balance
+onSnapshot(doc(db, "system", "vault"), (snap) => {
+  const bal = snap.exists() ? snap.data().balance : 0;
+  document.getElementById('vault-balance').textContent = fmt(bal);
+});
+// Listener for the Bank Vault (Place this inside your script tag)
+onSnapshot(doc(db, "system", "vault"), (snap) => {
+  const data = snap.data();
+  const balance = data ? data.balance : 0;
+  const el = document.getElementById('vault-balance');
+  if (el) el.textContent = fmt(balance);
+});
+
+window.depositToVault = async () => {
+  const amt = parseFloat(prompt("Enter amount to add to Bank Treasury:"));
+  if (isNaN(amt) || amt <= 0) return;
+
+  const description = prompt("Enter deposit description:", "Initial Capital Injection");
+  const vaultRef = doc(db, "system", "vault");
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const sfDoc = await transaction.get(vaultRef);
+      const newTotal = (sfDoc.exists() ? sfDoc.data().balance : 0) + amt;
+      transaction.set(vaultRef, { balance: newTotal, lastUpdate: serverTimestamp() }, { merge: true });
+    });
+
+    // Optional: Log this in a special 'admin_logs' collection
+    await addDoc(collection(db, "admin_logs"), {
+      action: "VAULT_DEPOSIT",
+      amount: amt,
+      description: description,
+      timestamp: serverTimestamp()
+    });
+
+    showToast(`Successfully added ${fmt(amt)} to Vault`);
+  } catch (e) {
+    console.error(e);
+    alert("Vault update failed.");
+  }
+};
+
+window.generatePDFReport = () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  // 1. Setup Document Styling
+  const timestamp = new Date().toLocaleString();
+  doc.setFontSize(20);
+  doc.setTextColor(8, 17, 31); // Navy
+  doc.text("NexusBank — Transaction Audit Report", 14, 22);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Generated on: ${timestamp}`, 14, 30);
+  doc.text(`Total Records: ${allTx.length}`, 14, 35);
+  
+  // 2. Prepare Data for Table
+  // We map the raw allTx data into an array of arrays
+  const tableRows = allTx.map(tx => [
+    fmtDate(tx.timestamp),
+    tx.userId,
+    tx.type.toUpperCase(),
+    fmt(tx.amount),
+    tx.description || 'N/A'
+  ]);
+
+  // 3. Generate Table
+  doc.autoTable({
+    startY: 45,
+    head: [['Date', 'User UID', 'Type', 'Amount', 'Description']],
+    body: tableRows,
+    headStyles: { fillColor: [240, 192, 64], textColor: [0, 0, 0] }, // Gold header
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+    margin: { top: 45 },
+    styles: { fontSize: 8, cellPadding: 3 }
+  });
+
+  // 4. Save the PDF
+  doc.save(`NexusBank_Report_${Date.now()}.pdf`);
+};
+
+
+
+
+</script>
+</body>
+</html>
