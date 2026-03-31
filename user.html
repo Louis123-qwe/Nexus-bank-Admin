@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexusBank — My Account</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+  :root {
+    --navy: #0a1628;
+    --navy-mid: #112240;
+    --navy-light: #1a3456;
+    --blue: #1e6bff;
+    --blue-glow: rgba(30,107,255,0.18);
+    --accent: #00d4a8;
+    --accent-dim: rgba(0,212,168,0.12);
+    --danger: #ff4d6d;
+    --danger-dim: rgba(255,77,109,0.12);
+    --gold: #f0c040;
+    --text: #e8edf5;
+    --text-muted: #7a92b4;
+    --border: rgba(255,255,255,0.07);
+    --card: rgba(17,34,64,0.85);
+    --glass: rgba(255,255,255,0.04);
+    --sidebar-w: 260px;
+    --radius: 16px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.6;
+  }
+
+  /* ══ AUTH ══ */
+  #auth-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px; position: relative; z-index: 1;
+  }
+  #auth-screen::after {
+    content: '';
+    position: fixed; top: -30%; right: -10%; width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(30,107,255,0.15) 0%, transparent 70%);
+    pointer-events: none; border-radius: 50%;
+  }
+  .auth-box {
+    width: 100%; max-width: 420px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 44px 40px;
+    backdrop-filter: blur(20px);
+    box-shadow: var(--shadow), 0 0 0 1px rgba(30,107,255,0.1);
+    position: relative; z-index: 2;
+  }
+  .auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+  .logo-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--blue), #0044cc);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff;
+    box-shadow: 0 4px 16px rgba(30,107,255,0.4);
+  }
+  .auth-logo span { font-family: 'Playfair Display', serif; font-size: 22px; }
+  .auth-tabs { display: flex; gap: 4px; background: var(--navy); border-radius: 10px; padding: 4px; margin-bottom: 28px; }
+  .auth-tab {
+    flex: 1; padding: 8px; text-align: center; border-radius: 7px;
+    cursor: pointer; font-size: 14px; font-weight: 500; color: var(--text-muted);
+    transition: all .2s;
+  }
+  .auth-tab.active { background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(30,107,255,0.4); }
+
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 7px; letter-spacing: .3px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 12px 16px;
+    background: var(--navy); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-family: inherit; font-size: 14px;
+    outline: none; transition: border-color .2s, box-shadow .2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow);
+  }
+  .form-group input::placeholder { color: var(--text-muted); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 24px; border-radius: 10px; border: none;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--blue), #0044cc);
+    color: #fff; width: 100%;
+    box-shadow: 0 4px 16px rgba(30,107,255,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(30,107,255,0.45); }
+  .btn-ghost { background: var(--glass); border: 1px solid var(--border); color: var(--text); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.08); }
+  .btn-sm { padding: 8px 16px; font-size: 13px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
+
+  .msg { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 14px; display: none; }
+  .msg.show { display: block; }
+  .msg.error { background: var(--danger-dim); border: 1px solid rgba(255,77,109,0.3); color: var(--danger); }
+  .msg.success { background: var(--accent-dim); border: 1px solid rgba(0,212,168,0.3); color: var(--accent); }
+
+  /* ══ APP SHELL ══ */
+  #app { display: none; min-height: 100vh; position: relative; z-index: 1; }
+  #app.visible { display: flex; }
+
+  .sidebar {
+    width: var(--sidebar-w); min-height: 100vh; position: fixed; left: 0; top: 0;
+    background: var(--navy-mid); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; z-index: 100;
+    transition: transform .3s ease;
+  }
+  .sidebar-header { padding: 28px 24px 20px; border-bottom: 1px solid var(--border); }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo .logo-icon { width: 36px; height: 36px; border-radius: 9px; font-size: 16px; }
+  .logo span { font-family: 'Playfair Display', serif; font-size: 20px; }
+
+  .user-card {
+    margin: 16px; padding: 14px 16px;
+    background: var(--glass); border: 1px solid var(--border); border-radius: 12px;
+  }
+  .user-card .u-name { font-weight: 600; font-size: 14px; }
+  .user-card .u-role { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
+
+  nav { flex: 1; padding: 8px 12px; }
+  .nav-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; padding: 0 8px; margin-bottom: 6px; margin-top: 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 10px;
+    cursor: pointer; color: var(--text-muted);
+    font-size: 14px; font-weight: 500; transition: all .15s; margin-bottom: 2px;
+  }
+  .nav-item .icon { width: 18px; text-align: center; font-size: 16px; }
+  .nav-item:hover { background: var(--glass); color: var(--text); }
+  .nav-item.active { background: var(--blue-glow); color: var(--blue); }
+
+  .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); }
+  .admin-link {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px; background: rgba(240,192,64,0.08); border: 1px solid rgba(240,192,64,0.2);
+    border-radius: 9px; color: var(--gold); font-size: 13px; font-weight: 500;
+    cursor: pointer; margin-bottom: 10px; text-decoration: none; transition: background .2s;
+  }
+  .admin-link:hover { background: rgba(240,192,64,0.15); }
+
+  .main { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; }
+  .topbar {
+    height: 64px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; border-bottom: 1px solid var(--border);
+    background: rgba(10,22,40,0.6); backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .topbar h1 { font-size: 18px; font-weight: 600; }
+  .balance-pill {
+    background: var(--accent-dim); border: 1px solid rgba(0,212,168,0.25);
+    padding: 6px 14px; border-radius: 999px;
+    font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--accent);
+  }
+
+  .page { padding: 32px; display: none; animation: fadeUp .3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* Cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px 24px;
+    backdrop-filter: blur(12px); transition: transform .2s, box-shadow .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+  .stat-card .s-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; }
+  .stat-card .s-icon { font-size: 26px; margin-bottom: 10px; }
+  .stat-card .s-val { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; }
+  .stat-card .s-val.accent { color: var(--accent); }
+  .stat-card .s-val.blue { color: var(--blue); }
+  .stat-card .s-val.red { color: var(--danger); }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(12px); overflow: hidden; }
+  .card-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-header h3 { font-size: 15px; font-weight: 600; }
+  .card-body { padding: 20px 24px; }
+
+  /* Balance Hero */
+  .balance-hero {
+    background: linear-gradient(135deg, #0d2452 0%, #0a1f40 50%, #0d1f3a 100%);
+    border: 1px solid rgba(30,107,255,0.2);
+    border-radius: 20px; padding: 32px; position: relative; overflow: hidden; margin-bottom: 24px;
+  }
+  .balance-hero::before {
+    content: ''; position: absolute; top: -60px; right: -60px; width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(30,107,255,0.25), transparent 70%); border-radius: 50%;
+  }
+  .balance-hero::after {
+    content: ''; position: absolute; bottom: -40px; left: 30%; width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(0,212,168,0.1), transparent 70%); border-radius: 50%;
+  }
+  .bh-label { font-size: 13px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+  .bh-greeting { font-size: 14px; color: rgba(255,255,255,0.55); margin-bottom: 4px; }
+  .bh-amount { font-family: 'DM Mono', monospace; font-size: 44px; font-weight: 500; color: #fff; position: relative; z-index: 1; letter-spacing: -1px; }
+  .bh-meta { display: flex; gap: 28px; margin-top: 22px; position: relative; z-index: 1; flex-wrap: wrap; }
+  .bml { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: .5px; }
+  .bmv { font-size: 14px; font-weight: 500; margin-top: 3px; font-family: 'DM Mono', monospace; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.5} }
+
+  /* TX List */
+  .tx-list { list-style: none; }
+  .tx-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .tx-item:last-child { border-bottom: none; }
+  .tx-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .tx-icon.deposit { background: var(--accent-dim); }
+  .tx-icon.withdraw { background: var(--danger-dim); }
+  .tx-icon.transfer-out { background: rgba(30,107,255,0.12); }
+  .tx-icon.transfer-in { background: rgba(240,192,64,0.12); }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-desc { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-date { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .tx-amount { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; flex-shrink: 0; }
+  .tx-amount.pos { color: var(--accent); }
+  .tx-amount.neg { color: var(--danger); }
+
+  .type-badge { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+  .type-badge.deposit { background: var(--accent-dim); color: var(--accent); }
+  .type-badge.withdraw { background: var(--danger-dim); color: var(--danger); }
+  .type-badge.transfer { background: var(--blue-glow); color: var(--blue); }
+
+  /* Transfer Form */
+  .transfer-tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+  .t-tab { padding: 10px 22px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1px solid var(--border); background: var(--glass); color: var(--text-muted); transition: all .2s; }
+  .t-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 4px 12px rgba(30,107,255,0.3); }
+  .transfer-section { display: none; }
+  .transfer-section.active { display: block; }
+
+  .confirm-box { background: var(--navy); border: 1px solid rgba(0,212,168,0.25); border-radius: 12px; padding: 16px; margin: 16px 0; display: none; }
+  .confirm-box.show { display: block; }
+  .cf-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+  .cf-val { font-size: 15px; font-weight: 600; color: var(--accent); }
+
+  /* History */
+  .filter-row { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-row input, .filter-row select {
+    padding: 9px 14px; background: var(--navy); border: 1px solid var(--border);
+    border-radius: 9px; color: var(--text); font-family: inherit; font-size: 13px;
+    outline: none; transition: border-color .2s;
+  }
+  .filter-row input:focus, .filter-row select:focus { border-color: var(--blue); }
+  .filter-row input { flex: 1; min-width: 160px; }
+  .tx-table { width: 100%; border-collapse: collapse; }
+  .tx-table th { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  .tx-table td { padding: 13px 14px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  .tx-table tr:last-child td { border-bottom: none; }
+  .tx-table tr:hover td { background: var(--glass); }
+
+  /* Settings */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .info-row { display: flex; flex-direction: column; margin-bottom: 18px; }
+  .ir-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .ir-val { font-size: 15px; font-weight: 500; }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--navy-mid); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 20px;
+    font-size: 14px; font-weight: 500; z-index: 999;
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    max-width: 320px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-color: rgba(0,212,168,0.4); color: var(--accent); }
+  #toast.error { border-color: rgba(255,77,109,0.4); color: var(--danger); }
+
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); }
+  .empty-state .e-icon { font-size: 40px; margin-bottom: 12px; opacity: .4; }
+
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; }
+  .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; }
+  .overlay-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; }
+  .overlay-bg.show { display: block; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--navy-light); border-radius: 4px; }
+
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .hamburger { display: flex; }
+    .page { padding: 20px; }
+    .two-col { grid-template-columns: 1fr; }
+    .topbar { padding: 0 20px; }
+    .bh-amount { font-size: 32px; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .stat-grid { grid-template-columns: 1fr; }
+    .transfer-tabs { flex-direction: column; }
+  }
+  
+  @media print {
+  body * { visibility: hidden; }
+  #receipt-content, #receipt-content * { visibility: visible; }
+  #receipt-content { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; }
+  #receipt-content button { display: none; } /* Hide print button on actual print */
+}
+/* PIN Modal Overlay */
+.pin-overlay {
+  position: fixed; inset: 0; 
+  background: rgba(5, 11, 20, 0.9); 
+  backdrop-filter: blur(8px);
+  display: none; align-items: center; justify-content: center; z-index: 3000;
+}
+.pin-box {
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  padding: 32px; border-radius: 24px;
+  width: 100%; max-width: 360px;
+  text-align: center; box-shadow: var(--shadow);
+}
+.pin-box h3 { margin-bottom: 8px; font-size: 18px; }
+.pin-box p { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
+.pin-input {
+  width: 100%; padding: 14px; background: var(--navy);
+  border: 1px solid var(--border); border-radius: 12px;
+  color: #fff; text-align: center; font-size: 20px;
+  letter-spacing: 4px; margin-bottom: 20px; outline: none;
+}
+.pin-input:focus { border-color: var(--blue); }
+
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="logo-icon">N</div>
+      <span>NexusBank</span>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+      <div class="auth-tab" onclick="switchAuthTab('signup')">Create Account</div>
+    </div>
+
+    <div id="tab-login">
+      <div class="form-group"><label>Email Address</label><input type="email" id="login-email" placeholder="you@example.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleLogin()"></div>
+      <button class="btn btn-primary" onclick="handleLogin()" id="login-btn">Sign In</button>
+      <div class="msg" id="login-msg"></div>
+    </div>
+
+    <div id="tab-signup" style="display:none">
+      <div class="form-group"><label>Full Name</label><input type="text" id="signup-name" placeholder="John Doe"></div>
+      <div class="form-group"><label>Email Address</label><input type="email" id="signup-email" placeholder="you@example.com"></div>
+      <div class="form-group"><label>Password (min. 6 characters)</label><input type="password" id="signup-password" placeholder="••••••••"></div>
+      <div class="form-group"><label>Confirm Password</label><input type="password" id="signup-confirm" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleSignup()"></div>
+      <button class="btn btn-primary" onclick="handleSignup()" id="signup-btn">Create Account</button>
+      <div class="msg" id="signup-msg"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- APP -->
+<div id="app">
+  <div class="overlay-bg" id="overlay-bg" onclick="closeSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">N</div>
+        <span>NexusBank</span>
+      </div>
+    </div>
+    <div class="user-card">
+      <div class="u-name" id="sb-name">—</div>
+      <div class="u-role">Personal Account</div>
+    </div>
+    <nav>
+      <div class="nav-label">Navigation</div>
+      <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')"><span class="icon">⬡</span> Dashboard</div>
+      
+      <div class="nav-item" data-page="transfer" onclick="navigate('transfer')"><span class="icon">↔</span> Transfer Money</div>
+      <div class="nav-item" data-page="history" onclick="navigate('history')"><span class="icon">≡</span> Transactions</div>
+      <div class="nav-item" data-page="settings" onclick="navigate('settings')"><span class="icon">◎</span> Settings</div>
+      
+    </nav>
+    
+    <div class="sidebar-footer">
+      <div id="admin-link-wrap" style="display:none">
+        <a href="admin.html" class="admin-link">⊞ Admin Panel</a>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="handleLogout()">⤴ Sign Out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></div>
+        <h1 id="page-title">Dashboard</h1>
+      </div>
+      <div class="balance-pill" id="topbar-balance">$0.00</div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="balance-hero">
+        <div class="bh-greeting" id="dash-greeting">Welcome back</div>
+        <div class="bh-label">Available Balance</div>
+        <div class="bh-amount" id="dash-balance">$0.00</div>
+        <div class="bh-meta">
+          <div>
+            <div class="bml">Account Number</div>
+            <div class="bmv" id="dash-acctnum">—</div>
+          </div>
+          <div>
+            <div class="bml">Account Type</div>
+            <div class="bmv" id="dash-type" style="font-family:'DM Sans',sans-serif">Savings</div>
+          </div>
+          <div>
+            <div class="bml">Status</div>
+            <div class="bmv" style="font-family:'DM Sans',sans-serif"><span class="status-dot"></span><span id="dash-status">Active</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="s-icon">⬇</div>
+          <div class="s-label">Total Deposits</div>
+          <div class="s-val accent" id="dash-dep">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-icon">⬆</div>
+          <div class="s-label">Total Withdrawals</div>
+          <div class="s-val red" id="dash-wth">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-icon">↗</div>
+          <div class="s-label">Total Sent</div>
+          <div class="s-val blue" id="dash-sent">$0.00</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-icon">↙</div>
+          <div class="s-label">Total Received</div>
+          <div class="s-val accent" id="dash-recv">$0.00</div>
+        </div>
+        <div class="card">
+  <div class="card-header"><h3>Your Active Loans</h3></div>
+  <div class="card-body">
+    <table class="repay-table">
+      <thead>
+        <tr><th>Amount Due</th><th>Action</th></tr>
+      </thead>
+      <tbody id="user-loans-tbody">
+        </tbody>
+    </table>
+  </div>
+</div>
+
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Recent Transactions</h3>
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+  <h3>Transaction History</h3>
+  <button class="btn btn-sm btn-ghost" onclick="generateStatement()" style="border-color:var(--accent); color:var(--accent);">
+    ⤓ Download Statement (PDF)
+  </button>
+</div>
+
+          <button class="btn btn-ghost btn-sm" onclick="navigate('history')">View All →</button>
+        </div>
+        <div class="card-body">
+          <ul class="tx-list" id="recent-tx-list">
+            <li class="empty-state"><div class="e-icon">📭</div><p>No transactions yet</p></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSFER -->
+    <div class="page" id="page-transfer">
+      <div class="transfer-tabs">
+        <div class="t-tab active" onclick="switchTransfer('transfer')">↔ Transfer</div>
+        <div class="t-tab" onclick="switchTransfer('deposit')">⬇Get Loan</div>
+        <div class="t-tab" onclick="switchTransfer('withdraw')">⬆ Withdraw</div>
+      </div>
+
+      <div class="transfer-section active" id="ts-transfer">
+        <div class="card" style="max-width:540px">
+          <div class="card-header"><h3>Send Money</h3></div>
+          <div class="card-body">
+            <div class="form-group"><label>Recipient Account number</label><input id="tr-acc" placeholder="Recipient Account Number" oninput="clearConfirm()"></div>
+            <div class="confirm-box" id="tr-confirm">
+              <div class="cf-label">✓ Sending to</div>
+              <div class="cf-val" id="tr-confirm-name">—</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:3px" id="tr-confirm-acct">—</div>
+            </div>
+            <div class="form-group"><label>Amount (USD)</label><input type="number" id="tr-amount" placeholder="0.00" min="0.01" step="0.01"></div>
+            <div class="form-group"><label>Description</label><input type="text" id="tr-desc" placeholder="e.g. Rent payment"></div>
+            <div style="display:flex;gap:10px;margin-top:4px">
+              <button class="btn btn-ghost" style="flex:1" onclick="verifyRecipient()">Verify Recipient</button>
+              <button class="btn btn-primary" style="flex:1" onclick="doTransfer()" id="tr-btn">Send Money</button>
+            </div>
+            <div class="msg" id="tr-msg"></div>
+          </div>
+        </div>
+      </div>
+
+     <div class="transfer-section" id="ts-deposit">
+  <div class="card" style="max-width:540px">
+    <div class="card-header"><h3>Request Loan / Credit</h3></div>
+    <div class="card-body">
+      <div class="form-group">
+        <label>Requested Amount (USD)</label>
+        <input type="number" id="loan-amount" placeholder="0.00" min="10" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Reason for Loan</label>
+        <input type="text" id="loan-desc" placeholder="e.g. Business expansion, Personal expense">
+      </div>
+      <button class="btn btn-primary" onclick="requestLoan()" id="loan-btn">Submit Request</button>
+      <div class="msg" id="loan-msg"></div>
+      <p style="font-size:11px; color:var(--text-muted); margin-top:15px; text-align:center;">
+        *All requests are subject to Admin review and manual approval.
+      </p>
+    </div>
+  </div>
+</div>
+
+      <div class="transfer-section" id="ts-withdraw">
+        <div class="card" style="max-width:540px">
+          <div class="card-header"><h3>Withdraw Funds</h3></div>
+          <div class="card-body">
+            <div class="form-group"><label>Amount (USD)</label><input type="number" id="wth-amount" placeholder="0.00" min="0.01" step="0.01"></div>
+            <div class="form-group"><label>Description</label><input type="text" id="wth-desc" placeholder="e.g. ATM withdrawal"></div>
+            <button class="btn btn-primary" onclick="doWithdraw()" id="wth-btn">Withdraw</button>
+            <div class="msg" id="wth-msg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="page" id="page-history">
+      <div class="card">
+        <div class="card-header"><h3>Transaction History</h3></div>
+        <div class="card-body">
+          <div class="filter-row">
+            <input type="text" id="filter-desc" placeholder="Search description…" oninput="filterTx()">
+            <select id="filter-type" onchange="filterTx()">
+              <option value="">All Types</option>
+              <option value="deposit">Deposit</option>
+              <option value="withdraw">Withdraw</option>
+              <option value="transfer">Transfer</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="tx-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Type</th><th>Description</th><th>Amount</th><th>Counterpart</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><h3>Account Information</h3></div>
+          <div class="card-body">
+            <div class="info-row"><div class="ir-label">Full Name</div><div class="ir-val" id="set-name">—</div></div>
+            <div class="info-row"><div class="ir-label">Email Address</div><div class="ir-val" id="set-email">—</div></div>
+            <div class="info-row"><div class="ir-label">Account Number</div><div class="ir-val" style="font-family:'DM Mono',monospace;font-size:14px" id="set-acctnum">—</div></div>
+            <div class="info-row"><div class="ir-label">Account Type</div><div class="ir-val" id="set-type">Savings</div></div>
+            <div class="info-row"><div class="ir-label">Account Status</div><div class="ir-val" id="set-status">Active</div></div>
+            <div class="info-row"><div class="ir-label">Member Since</div><div class="ir-val" id="set-since">—</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Change Password</h3></div>
+          <div class="card-body">
+            <div class="form-group"><label>Current Password</label><input type="password" id="pw-current" placeholder="••••••••"></div>
+            <div class="form-group"><label>New Password</label><input type="password" id="pw-new" placeholder="Min. 6 characters"></div>
+            <div class="form-group"><label>Confirm New Password</label><input type="password" id="pw-confirm" placeholder="••••••••"></div>
+            <button class="btn btn-primary" onclick="changePassword()" id="pw-btn">Update Password</button>
+            <div class="msg" id="pw-msg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+<div id="receipt-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:2000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(5px);">
+  <div id="receipt-content" style="background:#fff; color:#000; width:100%; max-width:400px; border-radius:15px; padding:40px; font-family:'DM Mono', monospace; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+    <button onclick="document.getElementById('receipt-modal').style.display='none'" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
+    
+    <div style="text-align:center; border-bottom:2px dashed #ccc; padding-bottom:20px; margin-bottom:20px;">
+      <h2 style="font-family:'Playfair Display', serif; margin:0;">NexusBank</h2>
+      <p style="font-size:12px; color:#666; margin:5px 0 0 0;">Official Transaction Receipt</p>
+    </div>
+
+    <div id="receipt-details" style="font-size:14px; line-height:1.8;">
+      </div>
+
+    <div style="margin-top:30px; padding-top:20px; border-top:2px dashed #ccc; text-align:center;">
+      <p style="font-size:11px; color:#888;">Thank you for banking with Nexus.</p>
+      <button class="btn btn-primary" onclick="window.print()" style="margin-top:15px; width:100%; background:#000; color:#fff;">Print Receipt</button>
+    </div>
+  </div>
+</div>
+<div id="pin-modal" class="pin-overlay">
+  <div class="pin-box">
+    <h3>Authorize Action</h3>
+    <p>Please enter your account password to confirm this transaction.</p>
+    <input type="password" id="modal-pin-input" class="pin-input" placeholder="••••••">
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-ghost" style="flex:1" onclick="closePinModal()">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" id="confirm-pin-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where, orderBy, addDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBI8C8Q3n20eA53qDkP2Xnru_NrTztzJuE",
+  authDomain: "light-4356b.firebaseapp.com",
+  projectId: "light-4356b",
+  storageBucket: "light-4356b.firebasestorage.app",
+  messagingSenderId: "32385003741",
+  appId: "1:32385003741:web:69318d08b683119f31eb34",
+  measurementId: "G-H1526DWZH5"
+};
+let isProcessing = false;
+async function runSafeTransaction(task) {
+  if (isProcessing) return;
+
+  isProcessing = true;
+
+  try {
+    if (!currentUser || !currentUserData) {
+      throw new Error("User not ready");
+    }
+
+    await task();
+
+    await loadUserData();
+    updateUI();
+
+  } catch (err) {
+    console.error(err);
+    showMsg("msg", "Transaction failed. Try again.", "error");
+  } finally {
+    isProcessing = false;
+  }
+}
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let currentUserData = null;
+let allTransactions = [];
+
+const fmt = n => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtDate = ts => {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+async function generateUniqueAccountNumber() {
+  let unique = false;
+  let acct;
+
+  while (!unique) {
+    acct = 'NX' + Math.floor(1000000000 + Math.random() * 9000000000);
+
+    const q = query(
+      collection(db, 'users'),
+      where('accountNumber', '==', acct)
+    );
+
+    const snap = await getDocs(q);
+    if (snap.empty) unique = true;
+  }
+
+  return acct;
+}
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✓ ' : '✕ ') + msg;
+  t.className = 'show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = '', 3500);
+}
+function showMsg(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg; el.className = 'msg ' + type + ' show';
+  setTimeout(() => el.className = 'msg', 5000);
+}
+function setLoading(id, loading, label) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spinner"></span>' : label;
+}
+
+// ── Auth UI ──
+window.switchAuthTab = (tab) => {
+  document.querySelectorAll('.auth-tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (tab === 'login')));
+  document.getElementById('tab-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('tab-signup').style.display = tab === 'signup' ? '' : 'none';
+};
+
+window.handleLogin = async () => {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  if (!email || !pw) return showMsg('login-msg', 'Please fill in all fields.', 'error');
+  setLoading('login-btn', true, 'Sign In');
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+  } catch (e) {
+    showMsg('login-msg', friendlyError(e.code), 'error');
+    setLoading('login-btn', false, 'Sign In');
+  }
+};
+
+window.handleSignup = async () => {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pw = document.getElementById('signup-password').value;
+  const conf = document.getElementById('signup-confirm').value;
+  if (!name || !email || !pw || !conf) return showMsg('signup-msg', 'Please fill in all fields.', 'error');
+  if (pw.length < 6) return showMsg('signup-msg', 'Password must be at least 6 characters.', 'error');
+  if (pw !== conf) return showMsg('signup-msg', 'Passwords do not match.', 'error');
+  setLoading('signup-btn', true, 'Create Account');
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pw);
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      uid: cred.user.uid, name, email,
+      role: 'user', balance: 15.5,
+      accountNumber: await generateUniqueAccountNumber(), accountType: 'Savings',
+      status: 'active', createdAt: serverTimestamp()
+    });
+  } catch (e) {
+    showMsg('signup-msg', friendlyError(e.code), 'error');
+    setLoading('signup-btn', false, 'Create Account');
+  }
+};
+
+window.handleLogout = async () => { await signOut(auth); };
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    displayUserLoans(); 
+
+    // 1. Try to get the document
+    let snap = await getDoc(doc(db, 'users', user.uid));
+
+    // 2. If it's missing, wait 1 second and try one more time 
+    // (This gives the Signup function time to finish the setDoc)
+    if (!snap.exists()) {
+      await new Promise(resolve => setTimeout(resolve, 1500)); 
+      snap = await getDoc(doc(db, 'users', user.uid));
+    }
+
+    // 3. Only if it STILL doesn't exist do we show the warning
+    if (!snap.exists()) {
+      console.warn("User document not found after retry.");
+      // Optional: showMsg('login-msg', 'Account initializing, please sign in again.', 'error');
+      await signOut(auth);
+      return;
+    }
+
+    currentUserData = snap.data();
+    updateUI();
+
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    document.getElementById('app').style.display = 'flex';
+
+  } else {
+    currentUser = null;
+    currentUserData = null;
+    document.getElementById('auth-screen').style.display = '';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('app').classList.remove('visible');
+  }
+});
+
+async function loadUserData() {
+  const snap = await getDoc(doc(db, 'users', currentUser.uid));
+  if (!snap.exists()) return;
+  currentUserData = snap.data();
+  updateUI();
+}
+
+function updateUI() {
+  const d = currentUserData;
+  const bal = fmt(d.balance || 0);
+  document.getElementById('sb-name').textContent = d.name;
+  document.getElementById('topbar-balance').textContent = bal;
+  document.getElementById('dash-greeting').textContent = 'Welcome back, ' + d.name.split(' ')[0];
+  document.getElementById('dash-balance').textContent = bal;
+  document.getElementById('dash-acctnum').textContent = d.accountNumber;
+  document.getElementById('dash-type').textContent = d.accountType;
+  document.getElementById('dash-status').textContent = d.status.charAt(0).toUpperCase() + d.status.slice(1);
+  document.getElementById('set-name').textContent = d.name;
+  document.getElementById('set-email').textContent = d.email;
+  document.getElementById('set-acctnum').textContent = d.accountNumber;
+  document.getElementById('set-type').textContent = d.accountType;
+  document.getElementById('set-status').textContent = d.status;
+  document.getElementById('set-since').textContent = d.createdAt ? fmtDate(d.createdAt) : '—';
+  if (d.role === 'admin') document.getElementById('admin-link-wrap').style.display = '';
+  loadRecentTransactions();
+}
+
+// ── Nav ──
+window.navigate = (page) => {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  const titles = { dashboard: 'Dashboard', transfer: 'Transfer Money', history: 'Transaction History', settings: 'Account Settings' };
+  document.getElementById('page-title').textContent = titles[page] || page;
+  closeSidebar();
+  if (page === 'history') loadHistory();
+};
+window.toggleSidebar = () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay-bg').classList.toggle('show');
+};
+window.closeSidebar = () => {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay-bg').classList.remove('show');
+};
+
+// ── Transfer Tabs ──
+window.switchTransfer = (tab) => {
+  const tabs = ['transfer', 'deposit', 'withdraw'];
+  document.querySelectorAll('.t-tab').forEach((t, i) => t.classList.toggle('active', tabs[i] === tab));
+  document.querySelectorAll('.transfer-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('ts-' + tab).classList.add('active');
+};
+
+// ── Verify Recipient ──
+window.verifyRecipient = async () => {
+  const accNumInput = document.getElementById('tr-acc').value.trim();
+  const msgEl = document.getElementById('tr-msg');
+  
+  if (!accNumInput) return showMsg('tr-msg', 'Enter an Account number first.', 'error');
+  
+  // FIX: Use 'accountNumber' to match your database and signup logic
+  if (accNumInput === currentUserData.accountNumber) {
+    return showMsg('tr-msg', 'You cannot transfer to yourself.', 'error');
+  }
+
+  try {
+    // Search Firestore for the account number
+    const q = query(collection(db, 'users'), where('accountNumber', '==', accNumInput));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      return showMsg('tr-msg', 'No account found with that number.', 'error');
+    }
+
+    const rec = snap.docs[0].data();
+    
+    // Update the UI with the found user's details
+    document.getElementById('tr-confirm-name').textContent = rec.name;
+    document.getElementById('tr-confirm-acct').textContent = `Account: ${rec.accountNumber} (${rec.accountType})`;
+    document.getElementById('tr-confirm').classList.add('show');
+    
+    showMsg('tr-msg', 'Recipient verified successfully!', 'success');
+  } catch (e) { 
+    console.error("Verification Error:", e);
+    showMsg('tr-msg', 'Error connecting to database.', 'error'); 
+  }
+};
+
+window.clearConfirm = () => {
+  document.getElementById('tr-confirm').classList.remove('show');
+  document.getElementById('tr-msg').className = 'msg';
+};
+
+// ── Transactions ──
+async function addTx(data) {
+  await addDoc(collection(db, 'transactions'), { ...data,
+      userId: currentUser.uid,  
+       timestamp: serverTimestamp() });
+}
+async function doTransfer() {
+  const toAccount = document.getElementById('tr-acc').value.trim();
+  const amount = parseFloat(document.getElementById('tr-amount').value);
+  const note = document.getElementById('tr-desc').value || 'Transfer';
+
+  await runSafeTransaction(async () => {
+
+    if (!toAccount || !amount || amount <= 0) {
+      return showMsg("tr-msg", "Invalid transfer details", "error");
+    }
+
+    if (toAccount === currentUserData.accountNumber) {
+      return showMsg("tr-msg", "Cannot transfer to self", "error");
+    }
+
+    const usersRef = collection(db, "users");
+
+    // 🔍 FIND RECIPIENT BY ACCOUNT NUMBER
+    const q = query(usersRef, where("accountNumber", "==", toAccount));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      return showMsg("tr-msg", "Recipient not found", "error");
+    }
+
+    const recipientDoc = snap.docs[0];
+    const recipientRef = doc(db, "users", recipientDoc.id);
+
+    const senderRef = doc(db, "users", currentUser.uid);
+
+    await runTransaction(db, async (t) => {
+
+      const senderSnap = await t.get(senderRef);
+      const recipientSnap = await t.get(recipientRef);
+
+      const senderBalance = senderSnap.data().balance;
+      const recipientBalance = recipientSnap.data().balance;
+
+      if (senderBalance < amount) {
+        throw new Error("Insufficient funds");
+      }
+
+      t.update(senderRef, {
+        balance: senderBalance - amount
+      });
+
+      t.update(recipientRef, {
+        balance: recipientBalance + amount
+      });
+    });
+
+    // 📜 LOG TRANSACTION
+
+
+
+const recipientData = recipientDoc.data();
+
+// 1. Log for the SENDER
+await addDoc(collection(db, "transactions"), {
+  userId: currentUser.uid,
+  accountNumber: currentUserData.accountNumber,
+  to: toAccount,
+  toName: recipientData.name, // Save the name here!
+  amount: amount,
+  type: "transfer",
+  description: note,
+  direction: "out",
+  timestamp: serverTimestamp()
+});
+
+// 2. Log for the RECEIVER
+await addDoc(collection(db, "transactions"), {
+  userId: recipientDoc.id,
+  accountNumber: toAccount,
+  from: currentUserData.accountNumber,
+  fromName: currentUserData.name, // Save your name for them!
+  amount: amount,
+  type: "transfer",
+  description: note,
+  direction: "in",
+  timestamp: serverTimestamp()
+});
+
+    showMsg("tr-msg", "Transfer successful", "success");
+  });
+}
+window.doWithdraw = async () => {
+  const amount = parseFloat(document.getElementById('wth-amount').value);
+  const desc = document.getElementById('wth-desc').value.trim() || 'Withdrawal';
+  if (!amount || amount <= 0) return showMsg('wth-msg', 'Enter a valid amount.', 'error');
+  if (amount > currentUserData.balance) return showMsg('wth-msg', `Insufficient balance. Available: ${fmt(currentUserData.balance)}.`, 'error');
+  setLoading('wth-btn', true, 'Withdraw');
+  try {
+    await runTransaction(db, async (t) => {
+      const ref = doc(db, 'users', currentUser.uid);
+      const snap = await t.get(ref);
+      if (amount > snap.data().balance) throw new Error('Insufficient balance.');
+      t.update(ref, { balance: snap.data().balance - amount });
+    });
+    await addTx({ userId: currentUser.uid, type: 'withdraw', amount, description: desc });
+    currentUserData.balance -= amount;
+    updateUI();
+    document.getElementById('wth-amount').value = '';
+    document.getElementById('wth-desc').value = '';
+    showToast(`Withdrew ${fmt(amount)}`);
+    showMsg('wth-msg', `${fmt(amount)} withdrawn successfully!`, 'success');
+  } catch (e) { showMsg('wth-msg', e.message || 'Withdrawal failed.', 'error'); }
+  setLoading('wth-btn', false, 'Withdraw');
+};
+
+async function loadRecentTransactions() {
+  try {
+    const q = query(collection(db, 'transactions'), where('userId', '==', currentUser.uid), orderBy('timestamp', 'desc'));
+    const snap = await getDocs(q);
+    allTransactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    let dep = 0, wth = 0, sent = 0, recv = 0;
+
+    allTransactions.forEach(tx => {
+      const amt = Number(tx.amount) || 0;
+      // UPDATED LOGIC: Include 'loan' type or 'in' direction
+      if (tx.type === 'deposit' || tx.direction === 'in') {
+         recv += amt;
+         if(tx.type === 'deposit') dep += amt;
+      } else {
+         if(tx.type === 'withdraw') wth += amt;
+         sent += amt;
+      }
+    });
+
+    document.getElementById('dash-dep').textContent = fmt(dep);
+    document.getElementById('dash-wth').textContent = fmt(wth);
+    document.getElementById('dash-sent').textContent = fmt(sent);
+    document.getElementById('dash-recv').textContent = fmt(recv);
+
+    // Render the list
+    const list = document.getElementById('recent-tx-list');
+    if (!allTransactions.length) { 
+      list.innerHTML = '<li class="empty-state">No transactions yet</li>'; 
+      return; 
+    }
+
+    list.innerHTML = allTransactions.slice(0, 5).map(tx => {
+      const isIn = tx.type === 'deposit' || tx.direction === 'in';
+      const cssClass = isIn ? 'deposit' : 'withdraw';
+      return `
+        <li class="tx-item">
+          <div class="tx-icon ${cssClass}">${isIn ? '⬇' : '⬆'}</div>
+          <div class="tx-info">
+            <div class="tx-desc">${tx.description}</div>
+            <div class="tx-date">${fmtDate(tx.timestamp)}</div>
+          </div>
+          <div class="tx-amount ${isIn ? 'pos' : 'neg'}">${isIn ? '+' : '-'}${fmt(tx.amount)}</div>
+        </li>`;
+    }).join('');
+    
+    // TRICK: Also trigger the loan display here
+    displayUserLoans(); 
+  } catch (e) { console.error(e); }
+}
+
+async function loadHistory() {
+  try {
+    const q = query(collection(db, 'transactions'), where('userId', '==', currentUser.uid), orderBy('timestamp', 'desc'));
+    const snap = await getDocs(q);
+    allTransactions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTable(allTransactions);
+  } catch (e) { console.error(e); }
+}
+
+window.filterTx = () => {
+  const desc = document.getElementById('filter-desc').value.toLowerCase();
+  const type = document.getElementById('filter-type').value;
+  renderTable(allTransactions.filter(tx => (!desc || tx.description?.toLowerCase().includes(desc)) && (!type || tx.type === type)));
+};
+
+function renderTable(txs) {
+  const tbody = document.getElementById('history-tbody');
+  if (!txs.length) { 
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">No transactions found</td></tr>'; 
+    return; 
+  }
+
+  tbody.innerHTML = txs.map(tx => {
+    const isIn = tx.type === 'deposit' || tx.direction === 'in';
+    
+    // Logic to show Name + Account Number
+    let counterpart = "—";
+    if (tx.type === 'transfer') {
+      if (tx.direction === 'in') {
+        // Show sender name if available, otherwise fall back to account number
+        counterpart = tx.fromName ? `${tx.fromName} (${tx.from})` : tx.from;
+      } else {
+        // Show recipient name if available
+        counterpart = tx.toName ? `${tx.toName} (${tx.to})` : tx.to;
+      }
+    } else if (tx.type === 'deposit' || tx.type === 'withdraw') {
+      counterpart = "System/Bank";
+    }
+
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted)">${fmtDate(tx.timestamp)}</td>
+      <td><span class="type-badge ${tx.type}">${tx.type}</span></td>
+      <td>${tx.description || '—'}</td>
+      <td style="font-family:'DM Mono',monospace;color:${isIn ? 'var(--accent)' : 'var(--danger)'}">
+        ${isIn ? '+' : '-'}${fmt(tx.amount)}
+      </td>
+      <td style="font-size:12px;color:var(--text-muted)">${counterpart}</td>
+      <td> <button class="btn btn-ghost btn-sm" onclick="viewReceipt('${tx.id}')" style="padding:4px 8px; font-size:11px;">
+      View Receipt
+    </button></td>
+    </tr>`;
+  }).join('');
+}
+
+
+
+
+
+window.requestLoan = async () => {
+  const amount = parseFloat(document.getElementById('loan-amount').value);
+  const desc = document.getElementById('loan-desc').value.trim();
+  
+  if (!amount || amount < 10) return showMsg('loan-msg', 'Minimum loan request is $10.00', 'error');
+  if (!desc) return showMsg('loan-msg', 'Please provide a reason for the request.', 'error');
+
+  setLoading('loan-btn', true, 'Submitting...');
+
+  try {
+    await addDoc(collection(db, "requests"), {
+      userId: currentUser.uid,
+      userName: currentUserData.name,
+      userEmail: currentUserData.email,
+      accountNumber: currentUserData.accountNumber,
+      amount: amount,
+      description: desc,
+      status: "pending", // Important: Admin will change this to 'approved'
+      type: "loan_request",
+      timestamp: serverTimestamp()
+    });
+
+    document.getElementById('loan-amount').value = '';
+    document.getElementById('loan-desc').value = '';
+    showMsg('loan-msg', 'Request submitted! Awaiting admin approval.', 'success');
+  } catch (e) {
+    showMsg('loan-msg', 'Failed to submit request.', 'error');
+  }
+  setLoading('loan-btn', false, 'Submit Request');
+};
+
+
+
+window.changePassword = async () => {
+  const cur = document.getElementById('pw-current').value;
+  const nw = document.getElementById('pw-new').value;
+  const cf = document.getElementById('pw-confirm').value;
+  if (!cur || !nw || !cf) return showMsg('pw-msg', 'Fill in all password fields.', 'error');
+  if (nw.length < 6) return showMsg('pw-msg', 'New password must be at least 6 characters.', 'error');
+  if (nw !== cf) return showMsg('pw-msg', 'New passwords do not match.', 'error');
+  setLoading('pw-btn', true, 'Update Password');
+  try {
+    const cred = EmailAuthProvider.credential(currentUser.email, cur);
+    await reauthenticateWithCredential(currentUser, cred);
+    await updatePassword(currentUser, nw);
+    document.getElementById('pw-current').value = '';
+    document.getElementById('pw-new').value = '';
+    document.getElementById('pw-confirm').value = '';
+    showToast('Password updated successfully');
+    showMsg('pw-msg', 'Password changed!', 'success');
+  } catch (e) { showMsg('pw-msg', friendlyError(e.code), 'error'); }
+  setLoading('pw-btn', false, 'Update Password');
+};
+
+function friendlyError(code) {
+  const map = {
+    'auth/invalid-credential': 'Invalid email or password.',
+    'auth/user-not-found': 'No account found with this email.',
+    'auth/wrong-password': 'Incorrect password.',
+    'auth/email-already-in-use': 'This email is already registered.',
+    'auth/weak-password': 'Password is too weak (min. 6 characters).',
+    'auth/invalid-email': 'Please enter a valid email address.',
+    'auth/too-many-requests': 'Too many attempts. Please try again later.',
+    'auth/requires-recent-login': 'Please sign out and sign back in, then try again.'
+  };
+  return map[code] || 'An error occurred. Please try again.';
+}
+
+window.viewReceipt = (txId) => {
+  const tx = allTransactions.find(t => t.id === txId);
+  if (!tx) return;
+
+  const isIn = tx.type === 'deposit' || tx.direction === 'in';
+  const details = document.getElementById('receipt-details');
+  
+  details.innerHTML = `
+    <div style="display:flex; justify-content:space-between;"><span>Reference:</span> <span>#${tx.id.slice(0,8).toUpperCase()}</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>Date:</span> <span>${fmtDate(tx.timestamp)}</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>Type:</span> <span style="text-transform:uppercase; font-weight:bold;">${tx.type}</span></div>
+    <hr style="border:none; border-top:1px solid #eee; margin:10px 0;">
+    <div style="display:flex; justify-content:space-between;"><span>Description:</span> <span>${tx.description || 'N/A'}</span></div>
+    <div style="display:flex; justify-content:space-between;"><span>${tx.direction === 'in' ? 'From' : 'To'}:</span> <span>${tx.direction === 'in' ? (tx.fromName || tx.from) : (tx.toName || tx.to)}</span></div>
+    <hr style="border:none; border-top:1px solid #eee; margin:10px 0;">
+    <div style="text-align:center; margin-top:10px;">
+      <div style="font-size:12px; color:#666;">Amount</div>
+      <div style="font-size:28px; font-weight:bold;">${isIn ? '+' : '-'}${fmt(tx.amount)}</div>
+    </div>
+    <div style="text-align:center; color:green; font-weight:bold; margin-top:10px;">✓ TRANSACTION SUCCESSFUL</div>
+  `;
+
+  document.getElementById('receipt-modal').style.display = 'flex';
+};
+
+window.repayLoan = async (amount) => {
+  if (amount <= 0) return alert("Invalid amount");
+  
+  const userRef = doc(db, "users", auth.currentUser.uid);
+  const vaultRef = doc(db, "system", "vault");
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const userSnap = await transaction.get(userRef);
+      const vaultSnap = await transaction.get(vaultRef);
+      
+      const currentBalance = userSnap.data().balance || 0;
+      const vaultBalance = vaultSnap.data().balance || 0;
+
+      if (currentBalance < amount) {
+        throw "Insufficient balance to make this payment.";
+      }
+
+      // Move the money
+      transaction.update(userRef, { balance: currentBalance - amount });
+      transaction.update(vaultRef, { balance: vaultBalance + amount });
+    });
+
+    // Log the transaction
+    await addDoc(collection(db, "transactions"), {
+      userId: auth.currentUser.uid,
+      type: "withdraw", // It's a withdrawal from their perspective
+      amount: amount,
+      description: "Loan Repayment",
+      direction: "out",
+      timestamp: serverTimestamp()
+    });
+
+    alert("Repayment successful!");
+  } catch (e) {
+    alert(e);
+  }
+};
+
+// 1. Function to show the loans to the user
+async function displayUserLoans() {
+  const loanQuery = query(
+    collection(db, "requests"), 
+    where("userId", "==", auth.currentUser.uid), 
+    where("status", "==", "approved")
+  );
+  
+  const snap = await getDocs(loanQuery);
+  const tbody = document.getElementById('user-loans-tbody');
+  
+  if (snap.empty) {
+    tbody.innerHTML = '<tr><td colspan="2">No active loans</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = snap.docs.map(docSnap => {
+    const loan = docSnap.data();
+    return `
+      <tr>
+        <td style="font-family:monospace; color:var(--danger);">${fmt(loan.amount)}</td>
+        <td>
+          <button class="btn btn-sm btn-primary" onclick="handleRepayment('${docSnap.id}', ${loan.amount})">
+            Repay Full Amount
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// 2. The Actual Repayment Logic (Run this when they click the button)
+window.handleRepayment = async (loanId, amount) => {
+  // 1. Ask for Password/PIN first
+  const isAuthorized = await verifyPin();
+  if (!isAuthorized) return; 
+
+  // 2. Proceed with transaction if authorized
+  const userRef = doc(db, "users", auth.currentUser.uid);
+  const vaultRef = doc(db, "system", "vault");
+  const loanRef = doc(db, "requests", loanId);
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const userSnap = await transaction.get(userRef);
+      const vaultSnap = await transaction.get(vaultRef);
+      
+      const currentBalance = userSnap.data().balance || 0;
+      const currentVault = vaultSnap.data().balance || 0;
+
+      if (currentBalance < amount) {
+        throw "Insufficient balance to repay this loan.";
+      }
+
+      transaction.update(userRef, { balance: currentBalance - amount });
+      transaction.update(vaultRef, { balance: currentVault + amount });
+      transaction.update(loanRef, { status: "paid" });
+    });
+
+    await addDoc(collection(db, "transactions"), {
+      userId: auth.currentUser.uid,
+      type: "withdraw",
+      amount: amount,
+      description: "Loan Repayment",
+      direction: "out",
+      timestamp: serverTimestamp()
+    });
+
+    showToast("Repayment Successful!");
+    loadRecentTransactions(); 
+  } catch (e) {
+    alert(e);
+  }
+};
+
+
+// New Styled Verification Function
+async function verifyPin() {
+  const modal = document.getElementById('pin-modal');
+  const input = document.getElementById('modal-pin-input');
+  const btn = document.getElementById('confirm-pin-btn');
+  
+  modal.style.display = 'flex';
+  input.value = '';
+  input.focus();
+
+  return new Promise((resolve) => {
+    // Helper to close and resolve
+    const finish = (result) => {
+      modal.style.display = 'none';
+      resolve(result);
+    };
+
+    // When clicking confirm
+    btn.onclick = async () => {
+      const password = input.value;
+      if (!password) return;
+      
+      setLoading('confirm-pin-btn', true, 'Verifying...');
+      try {
+        const credential = EmailAuthProvider.credential(currentUser.email, password);
+        await reauthenticateWithCredential(auth.currentUser, credential);
+        setLoading('confirm-pin-btn', false, 'Confirm');
+        finish(true);
+      } catch (e) {
+        alert("Incorrect password.");
+        setLoading('confirm-pin-btn', false, 'Confirm');
+      }
+    };
+
+    // Close on cancel
+    window.closePinModal = () => finish(false);
+  });
+}
+
+window.generateStatement = () => {
+  // Check if we actually have data to print
+  if (!allTransactions || allTransactions.length === 0) {
+    showToast("No transactions found to generate a report.", "error");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  // 1. Header & Branding
+  doc.setFontSize(22);
+  doc.setTextColor(8, 17, 31); 
+  doc.text("NexusBank", 14, 20);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text("Official Account Statement", 14, 28);
+  
+  // 2. User Information Box
+  doc.setDrawColor(230);
+  doc.line(14, 32, 196, 32); 
+  
+  doc.setFontSize(11);
+  doc.setTextColor(0);
+  doc.text(`Account Holder: ${currentUserData.name || 'Customer'}`, 14, 40);
+  doc.text(`Account Number: ${currentUserData.accountNumber || 'N/A'}`, 14, 46);
+  doc.text(`Current Balance: ${fmt(currentUserData.balance || 0)}`, 14, 52);
+  doc.text(`Date Generated: ${new Date().toLocaleString()}`, 14, 58);
+
+  // 3. Prepare Table Data (Using 'allTransactions')
+  const tableRows = allTransactions.map(tx => [
+    fmtDate(tx.timestamp),
+    tx.description || 'Transaction',
+    tx.type.toUpperCase(),
+    (tx.type === 'deposit' || tx.direction === 'in') ? `+${fmt(tx.amount)}` : `-${fmt(tx.amount)}`
+  ]);
+
+  // 4. Generate the Table
+  doc.autoTable({
+    startY: 65,
+    head: [['Date', 'Description', 'Type', 'Amount']],
+    body: tableRows,
+    headStyles: { fillColor: [8, 17, 31], textColor: [255, 255, 255] },
+    columnStyles: {
+      3: { halign: 'right', fontStyle: 'bold' } 
+    },
+    alternateRowStyles: { fillColor: [250, 250, 250] },
+    margin: { top: 65 }
+  });
+
+  // 5. Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for(let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text(`Page ${i} of ${pageCount} — NexusBank Digital Banking Services`, 105, 285, { align: 'center' });
+  }
+
+  // 6. Save
+  doc.save(`NexusBank_Statement_${currentUserData.accountNumber}.pdf`);
+};
+
+
+window.doTransfer = doTransfer;
+window.doDeposit = doDeposit;
+window.doWithdraw = doWithdraw;
+window.handleLogin = handleLogin;
+window.handleSignup = handleSignup;
+
+</script>
+</body>
+</html>
