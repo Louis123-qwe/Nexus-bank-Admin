@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -468,6 +469,24 @@
   background: var(--gold-dim);
   border-color: var(--gold);
 }
+/* This ensures the admin table expands to the full container width */
+.admin-table-container {
+    width: 100%;
+    overflow-x: auto; 
+}
+
+.admin-table {
+    width: 100%;
+    min-width: 800px; /* Prevents squishing on medium screens */
+    border-spacing: 0;
+}
+
+.admin-table td {
+    padding: 15px;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border);
+}
+
 
 </style>
 </head>
@@ -528,7 +547,7 @@
       <div class="nav-item" data-page="transactions" onclick="navigate('transactions')"><span class="icon">≡</span> All Transactions</div>
     </nav>
     <div class="sidebar-footer">
-      <a href="https://nexusbank-livid.vercel.app/" class="user-link">← User Portal</a>
+      <a href="user.html" class="user-link">← User Portal</a>
       <button class="btn btn-ghost btn-sm" style="width:100%" onclick="handleLogout()">⤴ Sign Out</button>
     </div>
   </aside>
@@ -585,6 +604,31 @@
   <button class="btn btn-sm" onclick="depositToVault()" style="margin-top:10px; width:100%; background:var(--gold); color:black;">
     + Add Capital
   </button>
+</div>
+<div class="admin-section" id="section-support">
+  <div class="card">
+    <div class="card-header">
+      <h3>Support Tickets & Feedback</h3>
+      <span id="ticket-count" class="badge">0 Open</span>
+    </div>
+    <div class="card-body">
+      <div style="overflow-x:auto">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>User</th>
+              <th>Subject</th>
+              <th>Message</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="admin-tickets-tbody">
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 
@@ -703,7 +747,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { 
   getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where, 
-  orderBy, addDoc, updateDoc, serverTimestamp, runTransaction, onSnapshot 
+  orderBy, addDoc, updateDoc, serverTimestamp, runTransaction, onSnapshot, deleteDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 
@@ -776,6 +820,19 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     const adminSnap = await getDoc(doc(db, 'users', user.uid));
     const adminData = adminSnap.data();
+    
+    if (user) {
+    // 1. Get the doc first to check the role
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const data = snap.data(); 
+
+    if (data && data.role === 'admin') {
+        console.log("Admin verified. Starting ticket listener...");
+        listenForSupportTickets();
+        // ... call your other admin listeners here
+    }
+}
+
 
     if (adminData && adminData.role === 'admin') {
       currentUser = user;
@@ -1423,6 +1480,92 @@ window.resetUserPassword = async (userEmail) => {
     alert("Error: " + e.message);
   }
 };
+
+// Function to start listening for support tickets
+function listenForSupportTickets() {
+  const q = query(
+    collection(db, "support_tickets"), 
+    orderBy("timestamp", "desc")
+  );
+
+  onSnapshot(q, (snapshot) => {
+    const tbody = document.getElementById('admin-tickets-tbody');
+    const countBadge = document.getElementById('ticket-count');
+    
+    let openCount = 0;
+    
+    if (snapshot.empty) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">No tickets found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = snapshot.docs.map(doc => {
+      const t = doc.data();
+      if (t.status === "open") openCount++;
+
+      return `
+        <tr style="${t.status === 'open' ? 'border-left: 3px solid var(--blue);' : 'opacity: 0.6;'}">
+          <td style="font-size:11px;">${t.timestamp ? t.timestamp.toDate().toLocaleString() : 'Just now'}</td>
+          <td>
+            <div style="font-weight:600;">${t.userName}</div>
+            <div style="font-size:10px; color:var(--text-muted);">${t.userEmail}</div>
+          </td>
+          <td><span class="badge">${t.subject}</span></td>
+          <td style="max-width:300px; font-size:13px; white-space: normal;">${t.message}</td>
+          <td>
+            ${t.status === 'open' 
+              ? `<button class="btn btn-sm btn-primary" onclick="resolveTicket('${doc.id}')">Mark Resolved</button>`
+              : `<span style="color:var(--accent);">✓ Resolved</span>`
+            }
+            <button class="btn btn-sm btn-ghost" onclick="deleteTicket('${doc.id}')" style="color:var(--danger); margin-left:5px;">🗑</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    countBadge.textContent = `${openCount} Open`;
+  });
+}
+
+// Function to resolve a ticket
+window.resolveTicket = async (id) => {
+  try {
+    // 1. Get the ticket data first so we know who to notify
+    const ticketRef = doc(db, "support_tickets", id);
+    const snap = await getDoc(ticketRef);
+    const ticketData = snap.data();
+
+    // 2. Mark as resolved
+    await updateDoc(ticketRef, { status: "resolved" });
+
+    // 3. Send a notification to the user
+    await addDoc(collection(db, "notifications"), {
+      userId: ticketData.userId,
+      message: `Support Update: Your ticket regarding "${ticketData.subject}" has been marked as resolved.`,
+      read: false,
+      timestamp: serverTimestamp()
+    });
+
+    showToast("Ticket resolved and user notified!");
+  } catch (e) {
+    console.error("Resolution error:", e);
+  }
+};
+
+
+// Function to delete a ticket
+window.deleteTicket = async (id) => {
+  if (!confirm("Delete this ticket permanently?")) return;
+  try {
+    await deleteDoc(doc(db, "support_tickets", id));
+    showToast("Ticket deleted");
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+// INITIALIZE: Call this inside your admin auth check
+// listenForSupportTickets();
 
 
 </script>
