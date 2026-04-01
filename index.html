@@ -237,7 +237,7 @@
   align-items: center;     /* Vertical center */
   justify-content: center;   /* Horizontal center */
   padding: 20px;
-  z-index: 2000; 
+  z-index: 2000; /* Must be higher than sidebar (1000) */
 }
 
 
@@ -528,7 +528,7 @@
       <div class="nav-item" data-page="transactions" onclick="navigate('transactions')"><span class="icon">≡</span> All Transactions</div>
     </nav>
     <div class="sidebar-footer">
-      <a href="user.html" class="user-link">← User Portal</a>
+      <a href="https://nexusbank-livid.vercel.app/" class="user-link">← User Portal</a>
       <button class="btn btn-ghost btn-sm" style="width:100%" onclick="handleLogout()">⤴ Sign Out</button>
     </div>
   </aside>
@@ -967,10 +967,27 @@ window.viewUser = async (uid) => {
           </span>
         </div>
       </div>
+        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+    <h4 style="font-size: 13px; color: var(--gold); text-transform: uppercase; margin: 0;">Communications</h4>
+    <label style="font-size: 11px; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 5px;">
+      <input type="checkbox" id="broadcast-check"> Broadcast to all users
+    </label>
+  </div>
+  
+  <div style="display: flex; gap: 8px;">
+    <input type="text" id="admin-msg-input" placeholder="Type message..." 
+           style="flex: 1; padding: 10px; background: var(--navy); border: 1px solid var(--border); border-radius: 8px; color: white; font-size: 13px;">
+    <button class="btn btn-primary btn-sm" onclick="sendAdminMessage('${u.uid}')">Dispatch</button>
+  </div>
+</div>
+
+      
 
       <div style="margin-top: 20px; text-align: center; font-size: 11px; color: var(--text-muted);">
         Identity Verified &bull; Active since ${fmtDate(u.createdAt)}
       </div>
+    
     `;
   } catch (err) {
     console.error(err);
@@ -1347,7 +1364,65 @@ window.generatePDFReport = () => {
   doc.save(`NexusBank_Report_${Date.now()}.pdf`);
 };
 
+window.sendAdminMessage = async (targetUid) => {
+  const msgInput = document.getElementById('admin-msg-input');
+  const isBroadcast = document.getElementById('broadcast-check').checked;
+  const message = msgInput.value.trim();
 
+  if (!message) return alert("Please enter a message.");
+  
+  const confirmText = isBroadcast 
+    ? `Broadcast this message to ALL ${allUsers.length} users?` 
+    : "Send this private message?";
+    
+  if (!confirm(confirmText)) return;
+
+  try {
+    if (isBroadcast) {
+      // Send to every user in the allUsers array
+      const batchPromises = allUsers.map(user => {
+        return addDoc(collection(db, "notifications"), {
+          userId: user.uid,
+          message: message,
+          type: "broadcast",
+          read: false,
+          timestamp: serverTimestamp()
+        });
+      });
+      await Promise.all(batchPromises);
+      showToast(`Broadcast sent to ${allUsers.length} users.`);
+    } else {
+      // Send to single user
+      await addDoc(collection(db, "notifications"), {
+        userId: targetUid,
+        message: message,
+        type: "admin_msg",
+        read: false,
+        timestamp: serverTimestamp()
+      });
+      showToast("Private message sent.");
+    }
+
+    msgInput.value = ""; 
+    document.getElementById('broadcast-check').checked = false;
+  } catch (e) {
+    console.error("Messaging Error:", e);
+    showToast("Failed to dispatch message.", "error");
+  }
+};
+
+
+
+window.resetUserPassword = async (userEmail) => {
+  if (!confirm(`Send a password reset link to ${userEmail}?`)) return;
+  
+  try {
+    await sendPasswordResetEmail(auth, userEmail);
+    alert("Reset email dispatched to user.");
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
+};
 
 
 </script>
